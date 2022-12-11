@@ -31,3 +31,10 @@ class WarehouseFactory(DjangoModelFactory):
         model = models.Warehouse
 
     name = factory.Faker("word")
+
+
+class ProductCategoryFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ProductCategory
+
+    name = factory.Faker("word")

@@ -37,7 +37,7 @@ def test_already_exists__return_error(web_request, warehouse):
 
     assert resp.get("error") == {
         "code": 2001,
-        "message": "Склад с таким именем уже существует",
+        "message": "Warehouse already exists",
     }
 
     assert not models.Warehouse.objects.exclude(id=warehouse.id).exists()

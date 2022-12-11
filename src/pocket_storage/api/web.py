@@ -78,3 +78,73 @@ def get_warehouses(
 ) -> list[schemas.WarehouseSchema]:
     warehouses = list(models.Warehouse.objects.order_by("name").all())
     return [schemas.WarehouseSchema.from_model(warehouse) for warehouse in warehouses]
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Добавить новую категорию товаров",
+)
+def add_product_category(
+    _: auth.Session = Depends(dependencies.get_session),
+    name: str = Body(..., title="Название категории"),
+    parent_id: uuid.UUID | None = Body(None, title="ID родительской категории"),
+) -> schemas.ProductCategorySchema:
+    try:
+        category = models.ProductCategory.objects.create(
+            name=name,
+            parent_id=parent_id,
+        )
+    except django.db.IntegrityError as exc:
+        if "violates unique constraint" in str(exc):
+            raise errors.ProductCategoryAlreadyExists
+        elif "violates foreign key constraint" in str(exc):
+            raise errors.ProductCategoryNotFound
+        raise
+
+    return schemas.ProductCategorySchema.from_model(category)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Переименовать категорию товаров",
+)
+def rename_product_category(
+    _: auth.Session = Depends(dependencies.get_session),
+    category_id: uuid.UUID = Body(..., title="ID категории товаров", alias="id"),
+    new_name: str = Body(..., title="Название категории"),
+) -> schemas.ProductCategorySchema:
+    with transaction.atomic():
+        try:
+            category = models.ProductCategory.objects.select_for_update(
+                of=("self",), no_key=True
+            ).get(id=category_id)
+        except models.ProductCategory.DoesNotExist:
+            raise errors.ProductCategoryNotFound
+
+        if new_name != category.name:
+            category.name = new_name
+            try:
+                category.save()
+            except django.db.IntegrityError:
+                raise errors.ProductCategoryAlreadyExists
+
+    return schemas.ProductCategorySchema.from_model(category)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Получить список категорий товаров",
+)
+def get_product_categories(
+    _: auth.Session = Depends(dependencies.get_session),
+    parent_id: uuid.UUID
+    | None = Body(None, title="Фильтрация по ID родительской категории"),
+) -> list[schemas.ProductCategorySchema]:
+    query = models.ProductCategory.objects
+    if parent_id is not None:
+        query = query.filter(parent_id=parent_id)
+
+    categories = list(query.all())
+    return [
+        schemas.ProductCategorySchema.from_model(category) for category in categories
+    ]
