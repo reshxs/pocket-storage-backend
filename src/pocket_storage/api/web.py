@@ -129,3 +129,22 @@ def rename_product_category(
                 raise errors.ProductCategoryAlreadyExists
 
     return schemas.ProductCategorySchema.from_model(category)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Получить список категорий товаров",
+)
+def get_product_categories(
+    _: auth.Session = Depends(dependencies.get_session),
+    parent_id: uuid.UUID
+    | None = Body(None, title="Фильтрация по ID родительской категории"),
+) -> list[schemas.ProductCategorySchema]:
+    query = models.ProductCategory.objects
+    if parent_id is not None:
+        query = query.filter(parent_id=parent_id)
+
+    categories = list(query.all())
+    return [
+        schemas.ProductCategorySchema.from_model(category) for category in categories
+    ]
