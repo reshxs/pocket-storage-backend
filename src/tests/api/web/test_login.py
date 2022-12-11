@@ -27,7 +27,7 @@ def test_wrong_password(web_request, user, user_raw_password):
         "login",
         {
             "username": user.username,
-            "password": f'{user_raw_password}_INVALID',
+            "password": f"{user_raw_password}_INVALID",
         },
     )
 
@@ -48,15 +48,16 @@ def test_ok(web_request, user, user_raw_password, freezer):
     created_session = Session.objects.get()
     assert created_session.expire_date == timezone.now() + dt.timedelta(hours=3)
     assert json.loads(created_session.session_data) == {
-        'user_id': user.id,
+        "user_id": user.id,
+        "username": user.username,
     }
 
     assert resp.get("result") == {
-        'session_key': str(created_session.session_key),
-        'user': {
-            'id': user.id,
-            'username': user.username,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-        }
+        "session_key": str(created_session.session_key),
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+        },
     }, resp.get("error")

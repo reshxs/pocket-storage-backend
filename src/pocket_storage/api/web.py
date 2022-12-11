@@ -1,13 +1,7 @@
-import datetime as dt
-import uuid
-
 import django.db
-import simplejson as json
-from django.contrib.auth import authenticate
-from django.contrib.sessions.models import Session
-from django.utils import timezone
 from fastapi_jsonrpc import Entrypoint
 
+from pocket_storage import auth
 from pocket_storage import models
 from . import errors
 from .schemas import web as schemas
@@ -24,25 +18,14 @@ api_v1 = Entrypoint(
     summary="Войти",
 )
 def login(username: str, password: str) -> schemas.LoginResponseSchema:
-    # TODO: вынести в отдельный модуль
-    user = authenticate(username=username, password=password)
+    session = auth.login(username, password)
 
-    if user is None:
+    if session is None:
         raise errors.WrongCredentials
 
-    session = Session.objects.create(
-        session_key=uuid.uuid4(),
-        session_data=json.dumps(
-            {
-                'user_id': user.id,  # TODO: типизировать
-            },
-        ),
-        expire_date=timezone.now() + dt.timedelta(hours=3),
-    )
-
     return schemas.LoginResponseSchema(
-        session_key=session.session_key,
-        user=schemas.UserSchema.from_model(user),
+        session_key=session.key,
+        user=schemas.UserSchema.from_model(session.user),
     )
 
 

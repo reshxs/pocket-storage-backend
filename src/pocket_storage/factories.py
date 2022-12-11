@@ -13,8 +13,8 @@ class UserFactory(DjangoModelFactory):
         model = User
 
     email = factory.Faker("email")
-    first_name = factory.Faker('first_name')
-    last_name = factory.Faker('last_name')
+    first_name = factory.Faker("first_name")
+    last_name = factory.Faker("last_name")
     username = factory.Faker("word")
     password = factory.LazyAttribute(lambda s: make_password(s.raw_password))
 
