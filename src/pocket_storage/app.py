@@ -32,7 +32,7 @@ default_executor = DjangoThreadPoolExecutor(max_workers=settings.THREADS)
 
 
 app = fastapi_jsonrpc.API(
-    title='HR PROJECTOR',
+    title='POCKET_STORAGE',
     version=settings.VERSION,
     description='Тут будет описание',
 )

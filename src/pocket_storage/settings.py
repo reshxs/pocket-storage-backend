@@ -128,6 +128,51 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'null': {
+            'level': 'DEBUG',
+            'class': 'logging.NullHandler',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': _settings.LOG_LEVEL,
+            'propagate': False,
+        },
+        'uvicorn': {
+            'level': 'INFO',
+        },
+        'django.db.backends.schema': {
+            'level': 'INFO',
+        },
+        'django.security.DisallowedHost': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'django.template': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'faker.factory': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'factory.generate': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+    },
+}
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
