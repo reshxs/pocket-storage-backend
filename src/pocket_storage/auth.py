@@ -1,3 +1,4 @@
+import dataclasses
 import datetime as dt
 import uuid
 
@@ -5,8 +6,8 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session as DjangoSession
 from django.utils import timezone
-import dataclasses
 from pydantic import BaseModel
+from pydantic import parse_raw_as
 
 
 class SessionData(BaseModel):
@@ -23,9 +24,8 @@ class SessionData(BaseModel):
 
 @dataclasses.dataclass
 class Session:
-    key: uuid.UUID
+    key: str
     data: SessionData
-    user: User
 
 
 def login(username, password) -> Session | None:
@@ -41,4 +41,15 @@ def login(username, password) -> Session | None:
         expire_date=timezone.now() + dt.timedelta(hours=3),
     )
 
-    return Session(key=session.session_key, data=session_data, user=user)
+    return Session(key=session.session_key, data=session_data)
+
+
+def get_session(session_key: str) -> Session | None:
+    try:
+        django_session = DjangoSession.objects.get(session_key=session_key)
+    except DjangoSession.DoesNotExist:
+        return None
+
+    return Session(
+        key=session_key, data=parse_raw_as(SessionData, django_session.session_data)
+    )

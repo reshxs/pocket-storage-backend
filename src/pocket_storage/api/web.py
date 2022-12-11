@@ -1,10 +1,13 @@
 import django.db
+from django.contrib.auth.models import User
+from fastapi import Depends, Body
 from fastapi_jsonrpc import Entrypoint
 
 from pocket_storage import auth
 from pocket_storage import models
 from . import errors
 from .schemas import web as schemas
+from . import dependencies
 
 api_v1 = Entrypoint(
     "/api/v1/web/jsonrpc",
@@ -25,7 +28,6 @@ def login(username: str, password: str) -> schemas.LoginResponseSchema:
 
     return schemas.LoginResponseSchema(
         session_key=session.key,
-        user=schemas.UserSchema.from_model(session.user),
     )
 
 
@@ -33,7 +35,10 @@ def login(username: str, password: str) -> schemas.LoginResponseSchema:
     tags=["web", "warehouse"],
     summary="Добавить склад",
 )
-def add_warehouse(name: str) -> schemas.WarehouseSchema:
+def add_warehouse(
+    _: auth.Session = Depends(dependencies.get_session),
+    name: str = Body(..., title="Название склада"),
+) -> schemas.WarehouseSchema:
     try:
         warehouse = models.Warehouse.objects.create(name=name)
     except django.db.IntegrityError:

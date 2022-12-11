@@ -1,4 +1,5 @@
 import datetime as dt
+import functools
 
 import pytest
 import simplejson as json
@@ -8,6 +9,15 @@ from django.utils import timezone
 pytestmark = [
     pytest.mark.django_db(transaction=True),
 ]
+
+
+@pytest.fixture()
+def web_request(transactional_db, api_client, requests_mock):
+    requests_mock.register_uri(
+        "POST", "http://testserver/api/v1/web/jsonrpc", real_http=True
+    )
+
+    return functools.partial(api_client.api_jsonrpc_request, url="/api/v1/web/jsonrpc")
 
 
 def test_user_not_found(web_request):
@@ -54,10 +64,4 @@ def test_ok(web_request, user, user_raw_password, freezer):
 
     assert resp.get("result") == {
         "session_key": str(created_session.session_key),
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-        },
     }, resp.get("error")

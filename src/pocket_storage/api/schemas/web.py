@@ -27,9 +27,8 @@ class LoginResponseSchema(BaseModel):
     session_key: uuid.UUID = Field(
         ...,
         title="Ключ сессии",
-        description="Используется авторизации",
+        description="Передается в заголовке X-session-key",
     )
-    user: UserSchema = Field(..., title="Данные пользователя")
 
 
 class WarehouseSchema(BaseModel):

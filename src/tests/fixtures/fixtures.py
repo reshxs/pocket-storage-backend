@@ -23,11 +23,15 @@ class ApiClient(TestClient):
         *,
         url: str,
         use_decimal: bool = True,
+        session_key: str = None,
         headers: dict = None,
         cookies: dict = None,
     ):
         headers = headers or {}
         cookies = cookies or {}
+
+        if session_key is not None:
+            headers["X-session-key"] = session_key
 
         resp = self.post(
             url=url,
@@ -63,9 +67,13 @@ def api_client(
 
 
 @pytest.fixture()
-def web_request(transactional_db, api_client, requests_mock):
+def web_request(transactional_db, api_client, requests_mock, user_session_key):
     requests_mock.register_uri(
         "POST", "http://testserver/api/v1/web/jsonrpc", real_http=True
     )
 
-    return functools.partial(api_client.api_jsonrpc_request, url="/api/v1/web/jsonrpc")
+    return functools.partial(
+        api_client.api_jsonrpc_request,
+        url="/api/v1/web/jsonrpc",
+        session_key=user_session_key,
+    )
