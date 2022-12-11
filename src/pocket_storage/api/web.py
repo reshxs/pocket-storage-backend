@@ -1,13 +1,15 @@
+import uuid
+
 import django.db
-from django.contrib.auth.models import User
+from django.db import transaction
 from fastapi import Depends, Body
 from fastapi_jsonrpc import Entrypoint
 
 from pocket_storage import auth
 from pocket_storage import models
+from . import dependencies
 from . import errors
 from .schemas import web as schemas
-from . import dependencies
 
 api_v1 = Entrypoint(
     "/api/v1/web/jsonrpc",
@@ -45,3 +47,34 @@ def add_warehouse(
         raise errors.WarehouseAlreadyExists
 
     return schemas.WarehouseSchema.from_model(warehouse)
+
+
+@api_v1.method(
+    tags=["web", "warehouse"],
+    summary="Переименовать склад",
+)
+def rename_warehouse(
+    _: auth.Session = Depends(dependencies.get_session),
+    warehouse_id: uuid.UUID = Body(..., title="ID склада", alias="id"),
+    new_name: str = Body(..., title="Новое название"),
+) -> schemas.WarehouseSchema:
+    with transaction.atomic():
+        warehouse = models.Warehouse.objects.select_for_update(
+            of=("self",), no_key=True
+        ).get(id=warehouse_id)
+        if warehouse.name != new_name:
+            warehouse.name = new_name
+            warehouse.save(update_fields=["name"])
+
+    return schemas.WarehouseSchema.from_model(warehouse)
+
+
+@api_v1.method(
+    tags=["web", "warehouse"],
+    summary="Получить список складов",
+)
+def get_warehouses(
+    _: auth.Session = Depends(dependencies.get_session),
+) -> list[schemas.WarehouseSchema]:
+    warehouses = list(models.Warehouse.objects.order_by("name").all())
+    return [schemas.WarehouseSchema.from_model(warehouse) for warehouse in warehouses]
