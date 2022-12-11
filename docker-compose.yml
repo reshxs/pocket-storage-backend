@@ -1,0 +1,11 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:14.2
+    environment:
+      POSTGRES_DB: pocket_storage
+      POSTGRES_USER: pocket_storage
+      POSTGRES_PASSWORD: pocket_storage
+    ports:
+      - "5432:5432"
