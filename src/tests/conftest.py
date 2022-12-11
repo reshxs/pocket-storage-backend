@@ -12,10 +12,10 @@ requests_mock.response.jsonutils = simplejson
 requests_mock.response.json = simplejson
 
 
-if platform.system() == 'Darwin':
+if platform.system() == "Darwin":
     import socket
 
-    socket.gethostbyname = lambda x: '127.0.0.1'
+    socket.gethostbyname = lambda x: "127.0.0.1"
 
 
 def patched_freezgun_astimezone(self, tz=None):
@@ -70,6 +70,7 @@ fastapi_jsonrpc.call_sync_async = mock_call_sync_async
 
 
 pytest_plugins = [
-    'tests.fixtures.fixtures',
-    'tests.fixtures.const',
+    "freezegun",
+    "tests.fixtures.fixtures",
+    "tests.fixtures.const",
 ]

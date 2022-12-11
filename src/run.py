@@ -3,7 +3,7 @@ import os
 import django
 
 # Инициализируем Django до инициализации приложения:
-os.environ['DJANGO_SETTINGS_MODULE'] = 'pocket_storage.settings'
+os.environ["DJANGO_SETTINGS_MODULE"] = "pocket_storage.settings"
 django.setup()
 
 import click
@@ -21,34 +21,34 @@ def cli():
 
 @cli.command()
 @click.option(
-    '--collectstatic/--no-collectstatic',
+    "--collectstatic/--no-collectstatic",
     is_flag=True,
     default=True,
-    help='collect Django static',
+    help="collect Django static",
 )
 @click.option(
-    '--uvicorn-debug/--no-uvicorn-debug',
+    "--uvicorn-debug/--no-uvicorn-debug",
     is_flag=True,
     default=True,
-    help='Enable/Disable debug and auto-reload'
+    help="Enable/Disable debug and auto-reload",
 )
 @click.option(
-    '--migrate/--no-migrate',
+    "--migrate/--no-migrate",
     is_flag=True,
     default=False,
-    help='Apply migrations before run app'
+    help="Apply migrations before run app",
 )
 def web(collectstatic: bool, uvicorn_debug: bool, migrate: bool):
     if migrate:
-        management.call_command('migrate')
+        management.call_command("migrate")
 
     if collectstatic:
-        management.call_command('collectstatic', '--no-input', '--clear')
+        management.call_command("collectstatic", "--no-input", "--clear")
 
     app = pocket_storage.app.app
 
     if uvicorn_debug:
-        app = 'pocket_storage.app:app'
+        app = "pocket_storage.app:app"
 
     uvicorn.run(
         # TODO: add uvicorn_debug
@@ -57,10 +57,10 @@ def web(collectstatic: bool, uvicorn_debug: bool, migrate: bool):
         port=settings.PORT,
         access_log=False,
         log_config=None,
-        lifespan='on',
-        loop='uvloop',
+        lifespan="on",
+        loop="uvloop",
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()

@@ -22,15 +22,15 @@ class Warehouse(BaseModel):
     """Склад."""
 
     class Meta:
-        verbose_name = 'Склад'
-        verbose_name_plural = 'Склады'
+        verbose_name = "Склад"
+        verbose_name_plural = "Склады"
 
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
     )
     name = models.CharField(
-        'Название',
+        "Название",
         max_length=128,
         unique=True,
     )
