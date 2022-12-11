@@ -102,3 +102,30 @@ def add_product_category(
         raise
 
     return schemas.ProductCategorySchema.from_model(category)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Переименовать категорию товаров",
+)
+def rename_product_category(
+    _: auth.Session = Depends(dependencies.get_session),
+    category_id: uuid.UUID = Body(..., title="ID категории товаров", alias="id"),
+    new_name: str = Body(..., title="Название категории"),
+) -> schemas.ProductCategorySchema:
+    with transaction.atomic():
+        try:
+            category = models.ProductCategory.objects.select_for_update(
+                of=("self",), no_key=True
+            ).get(id=category_id)
+        except models.ProductCategory.DoesNotExist:
+            raise errors.ProductCategoryNotFound
+
+        if new_name != category.name:
+            category.name = new_name
+            try:
+                category.save()
+            except django.db.IntegrityError:
+                raise errors.ProductCategoryAlreadyExists
+
+    return schemas.ProductCategorySchema.from_model(category)
