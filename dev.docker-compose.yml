@@ -1,0 +1,30 @@
+version: '3.3'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_NAME: pocket_storage
+      DB_USER: pocket_storage
+      DB_PASSWORD: pocket_storage
+      MEMCACHED_HOST: memcached
+    depends_on:
+      - db
+      - memcached
+
+  db:
+    image: postgres:14.2
+    environment:
+      POSTGRES_DB: pocket_storage
+      POSTGRES_USER: pocket_storage
+      POSTGRES_PASSWORD: pocket_storage
+    ports:
+      - "5432:5432"
+
+  memcached:
+    image: memcached:1.6.17-alpine
+    ports:
+      - "11211:11211"
