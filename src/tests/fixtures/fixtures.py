@@ -5,13 +5,13 @@ import simplejson as json
 from starlette.testclient import TestClient
 
 
-@pytest.fixture(autouse=True, scope='session')
+@pytest.fixture(autouse=True, scope="session")
 def _init_django():
     import os
 
     import django
 
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'pocket_storage.settings'
+    os.environ["DJANGO_SETTINGS_MODULE"] = "pocket_storage.settings"
     django.setup()
 
 
@@ -33,10 +33,10 @@ class ApiClient(TestClient):
             url=url,
             data=json.dumps(
                 {
-                    'id': 0,
-                    'jsonrpc': '2.0',
-                    'method': method,
-                    'params': params or {},
+                    "id": 0,
+                    "jsonrpc": "2.0",
+                    "method": method,
+                    "params": params or {},
                 },
             ),
             headers=headers,
@@ -45,6 +45,7 @@ class ApiClient(TestClient):
 
         # return resp.json(use_decimal=use_decimal)  # FIXME: куда делся use_decimal?
         return resp.json()
+
 
 @pytest.fixture()
 def api_app():
@@ -63,6 +64,8 @@ def api_client(
 
 @pytest.fixture()
 def web_request(transactional_db, api_client, requests_mock):
-    requests_mock.register_uri('POST', 'http://testserver/api/v1/web/jsonrpc', real_http=True)
+    requests_mock.register_uri(
+        "POST", "http://testserver/api/v1/web/jsonrpc", real_http=True
+    )
 
-    return functools.partial(api_client.api_jsonrpc_request, url='/api/v1/web/jsonrpc')
+    return functools.partial(api_client.api_jsonrpc_request, url="/api/v1/web/jsonrpc")

@@ -16,25 +16,28 @@ import dotenv
 
 
 class _Settings(BaseSettings):
-    SECRET_KEY: str = 'DEVKEY'
+    SECRET_KEY: str = "DEVKEY"
 
     DEBUG: bool = True
-    VERSION: str = 'unknown'
+    VERSION: str = "unknown"
     THREADS: int = 4
-    LOG_LEVEL: str = 'DEBUG'
+    LOG_LEVEL: str = "DEBUG"
 
     PORT: int = 8000
-    HOST: str = '0.0.0.0'
+    HOST: str = "0.0.0.0"
 
-    DB_HOST: str = 'localhost'
+    DB_HOST: str = "localhost"
     DB_PORT: int = 5432
-    DB_NAME: str = 'pocket_storage'
-    DB_USER: str = 'pocket_storage'
-    DB_PASSWORD: str = 'pocket_storage'
+    DB_NAME: str = "pocket_storage"
+    DB_USER: str = "pocket_storage"
+    DB_PASSWORD: str = "pocket_storage"
+
+    MEMCACHED_HOST: str = "localhost"
+    MEMCACHED_PORT: int = 11211
 
     class Config:
-        env_file = dotenv.find_dotenv('.env') or '.env'
-        env_file_encoding = 'utf-8'
+        env_file = dotenv.find_dotenv(".env") or ".env"
+        env_file_encoding = "utf-8"
 
 
 _settings = _Settings()
@@ -45,66 +48,74 @@ for _name in _settings.__fields__:
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'pocket_storage',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "pocket_storage",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'pocket_storage.urls'
+ROOT_URLCONF = "pocket_storage.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'pocket_storage.wsgi.application'
+WSGI_APPLICATION = "pocket_storage.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': _settings.DB_NAME,
-        'USER': _settings.DB_USER,
-        'PASSWORD': _settings.DB_PASSWORD,
-        'HOST': _settings.DB_HOST,
-        'PORT': _settings.DB_PORT,
-        'OPTIONS': {
-            'application_name': _settings.DB_USER,
-        }
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": _settings.DB_NAME,
+        "USER": _settings.DB_USER,
+        "PASSWORD": _settings.DB_PASSWORD,
+        "HOST": _settings.DB_HOST,
+        "PORT": _settings.DB_PORT,
+        "OPTIONS": {
+            "application_name": _settings.DB_USER,
+        },
+    }
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        "LOCATION": f"{_settings.MEMCACHED_HOST}:{_settings.MEMCACHED_PORT}",
+        "TIMEOUT": 120,
     }
 }
 
@@ -114,60 +125,60 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'null': {
-            'level': 'DEBUG',
-            'class': 'logging.NullHandler',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "null": {
+            "level": "DEBUG",
+            "class": "logging.NullHandler",
         },
-        'console': {
-            'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
         },
     },
-    'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': _settings.LOG_LEVEL,
-            'propagate': False,
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": _settings.LOG_LEVEL,
+            "propagate": False,
         },
-        'uvicorn': {
-            'level': 'INFO',
+        "uvicorn": {
+            "level": "INFO",
         },
-        'django.db.backends.schema': {
-            'level': 'INFO',
+        "django.db.backends.schema": {
+            "level": "INFO",
         },
-        'django.security.DisallowedHost': {
-            'handlers': ['null'],
-            'propagate': False,
+        "django.security.DisallowedHost": {
+            "handlers": ["null"],
+            "propagate": False,
         },
-        'django.template': {
-            'handlers': ['null'],
-            'propagate': False,
+        "django.template": {
+            "handlers": ["null"],
+            "propagate": False,
         },
-        'faker.factory': {
-            'handlers': ['null'],
-            'propagate': False,
+        "faker.factory": {
+            "handlers": ["null"],
+            "propagate": False,
         },
-        'factory.generate': {
-            'handlers': ['null'],
-            'propagate': False,
+        "factory.generate": {
+            "handlers": ["null"],
+            "propagate": False,
         },
     },
 }
@@ -176,9 +187,9 @@ LOGGING = {
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
-LANGUAGE_CODE = 'ru-RU'
+LANGUAGE_CODE = "ru-RU"
 
-TIME_ZONE = 'Asia/Yekaterinburg'
+TIME_ZONE = "Asia/Yekaterinburg"
 
 USE_I18N = True
 
@@ -188,10 +199,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = Path(BASE_DIR, 'staticfiles')
+STATIC_URL = "static/"
+STATIC_ROOT = Path(BASE_DIR, "staticfiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"

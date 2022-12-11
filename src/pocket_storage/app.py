@@ -32,50 +32,52 @@ default_executor = DjangoThreadPoolExecutor(max_workers=settings.THREADS)
 
 
 app = fastapi_jsonrpc.API(
-    title='POCKET_STORAGE',
+    title="POCKET_STORAGE",
     version=settings.VERSION,
-    description='Тут будет описание',
+    description="Тут будет описание",
 )
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],  # FIXME: перед деплоем настроить политики доступа
+    allow_origins=["*"],  # FIXME: перед деплоем настроить политики доступа
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-@app.on_event('startup')
+@app.on_event("startup")
 async def on_startup():
     loop = asyncio.get_running_loop()
-    logger.info('Setup ThreadPoolExecutor: max_workers=%s', settings.THREADS)
+    logger.info("Setup ThreadPoolExecutor: max_workers=%s", settings.THREADS)
     loop.set_default_executor(default_executor)
 
 
-@app.middleware('http')
+@app.middleware("http")
 async def django_request_signals(request: Request, call_next):
     await sync_to_async(request_started.send)(sender=app.__class__, scope=request.scope)
 
     try:
         response = await call_next(request)
     finally:
-        await sync_to_async(request_finished.send)(sender=app.__class__, scope=request.scope)
+        await sync_to_async(request_finished.send)(
+            sender=app.__class__, scope=request.scope
+        )
 
     return response
 
 
-app.mount('/app', get_django_asgi_app())
+app.mount("/app", get_django_asgi_app())
 app.mount(
-    '/static',
+    "/static",
     app=StaticFiles(directory=settings.STATIC_ROOT.as_posix(), check_dir=False),
-    name='staticfiles',
+    name="staticfiles",
 )
 
 app.bind_entrypoint(web_api_v1)
 
 
-@app.get('/', include_in_schema=False)
+@app.get("/", include_in_schema=False)
 def redirect_to_docs() -> RedirectResponse:
-    return RedirectResponse('/docs')
+    return RedirectResponse("/docs")

@@ -22,9 +22,11 @@ packaging==21.3
 pluggy==1.0.0
 psycopg2==2.9.5
 pydantic==1.10.2
+pymemcache==4.0.0
 pyparsing==3.0.9
 pytest==7.2.0
 pytest-django==4.5.2
+pytest-freezegun==0.4.2
 python-dateutil==2.8.2
 python-dotenv==0.21.0
 requests==2.28.1
