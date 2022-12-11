@@ -13,4 +13,14 @@ class AccessDenied(BaseError):
 
 class WarehouseAlreadyExists(BaseError):
     CODE = 2001
-    MESSAGE = "Склад с таким именем уже существует"
+    MESSAGE = "Warehouse already exists"
+
+
+class ProductCategoryAlreadyExists(BaseError):
+    CODE = 3001
+    MESSAGE = "Product category already exists"
+
+
+class ProductCategoryNotFound(BaseError):
+    CODE = 3002
+    MESSAGE = "Product category not found"
