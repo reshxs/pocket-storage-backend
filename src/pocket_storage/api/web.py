@@ -105,16 +105,22 @@ def add_product_category(
     name: str = Body(..., title="Название категории"),
     parent_id: uuid.UUID | None = Body(None, title="ID родительской категории"),
 ) -> schemas.ProductCategorySchema:
+    if parent_id:
+        try:
+            parent = models.ProductCategory.objects.get(id=parent_id)
+        except models.ProductCategory.DoesNotExist:
+            raise errors.ProductCategoryNotFound
+    else:
+        parent = None
+
     try:
         category = models.ProductCategory.objects.create(
             name=name,
-            parent_id=parent_id,
+            parent=parent,
         )
     except django.db.IntegrityError as exc:
         if "violates unique constraint" in str(exc):
             raise errors.ProductCategoryAlreadyExists
-        elif "violates foreign key constraint" in str(exc):
-            raise errors.ProductCategoryNotFound
         raise
 
     return schemas.ProductCategorySchema.from_model(category)
@@ -134,9 +140,13 @@ def rename_product_category(
 ) -> schemas.ProductCategorySchema:
     with transaction.atomic():
         try:
-            category = models.ProductCategory.objects.select_for_update(
-                of=("self",), no_key=True
-            ).get(id=category_id)
+            category = (
+                models.ProductCategory.objects.select_for_update(
+                    of=("self",), no_key=True
+                )
+                .select_related("parent")
+                .get(id=category_id)
+            )
         except models.ProductCategory.DoesNotExist:
             raise errors.ProductCategoryNotFound
 
@@ -159,7 +169,7 @@ def get_product_categories(
     parent_id: uuid.UUID
     | None = Body(None, title="Фильтрация по ID родительской категории"),
 ) -> list[schemas.ProductCategorySchema]:
-    query = models.ProductCategory.objects
+    query = models.ProductCategory.objects.select_related("parent")
     if parent_id is not None:
         query = query.filter(parent_id=parent_id)
 
@@ -184,17 +194,20 @@ def add_product(
     ),
 ) -> schemas.ProductSchema:
     try:
+        category = models.ProductCategory.objects.get(id=product_data.category_id)
+    except models.ProductCategory.DoesNotExist:
+        raise errors.ProductCategoryNotFound
+
+    try:
         product = models.Product.objects.create(
             name=product_data.name,
             SKU=product_data.SKU,
             barcode=product_data.barcode,
-            category_id=product_data.category_id,
+            category=category,
         )
     except django.db.IntegrityError as exc:
         if "violates unique constraint" in str(exc):
             raise errors.ProductAlreadyExists
-        elif "violates foreign key constraint" in str(exc):
-            raise errors.ProductCategoryNotFound
         raise
 
     return schemas.ProductSchema.from_model(product)
@@ -219,9 +232,11 @@ def update_product(
     update_kwargs = product_data.dict(exclude_none=True)
     with transaction.atomic():
         try:
-            product = models.Product.objects.select_for_update(
-                of=("self",), no_key=True
-            ).get(id=product_id)
+            product = (
+                models.Product.objects.select_for_update(of=("self",), no_key=True)
+                .select_related("category")
+                .get(id=product_id)
+            )
         except models.Product.DoesNotExist:
             raise errors.ProductNotFound
 
@@ -254,5 +269,21 @@ def update_product(
                 if "violates unique constraint" in str(exc):
                     raise errors.ProductAlreadyExists
                 raise
+
+    return schemas.ProductSchema.from_model(product)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Получить товар по ID",
+)
+def get_product(
+    _: auth.Session = Depends(dependencies.get_session),
+    product_id: uuid.UUID = Body(..., title="ID товара", alias="id"),
+) -> schemas.ProductSchema:
+    try:
+        product = models.Product.objects.select_related("category").get(id=product_id)
+    except models.Product.DoesNotExist:
+        raise errors.ProductNotFound
 
     return schemas.ProductSchema.from_model(product)

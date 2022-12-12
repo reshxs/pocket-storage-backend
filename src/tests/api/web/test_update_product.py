@@ -42,7 +42,13 @@ def test_ok(web_request, freezer):
         "name": "new_name",
         "SKU": new_sku,
         "barcode": "4600702084566",
-        "category_id": str(new_category.id),
+        "category": {
+            "id": str(new_category.id),
+            "name": new_category.name,
+            "parent_id": str(new_category.parent_id)
+            if new_category.parent_id
+            else None,
+        },
     }, resp.get("error")
 
     product.refresh_from_db()

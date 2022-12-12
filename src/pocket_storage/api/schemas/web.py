@@ -77,7 +77,7 @@ class ProductSchema(BaseModel):
     name: str = Field(..., title="Название товара")
     SKU: str = Field(..., title="SKU товара")
     barcode: str | None = Field(None, title="Штрих-код товара (если есть)")
-    category_id: uuid.UUID | None = Field(None, title="ID категории товара")
+    category: ProductCategorySchema | None = Field(None, title="Категория товара")
 
     @classmethod
     def from_model(cls, product: models.Product):
@@ -86,5 +86,5 @@ class ProductSchema(BaseModel):
             name=product.name,
             SKU=product.SKU,
             barcode=product.barcode,
-            category_id=product.category_id,
+            category=ProductCategorySchema.from_model(product.category),
         )

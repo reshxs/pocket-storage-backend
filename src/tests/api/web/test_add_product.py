@@ -37,7 +37,11 @@ def test_ok(web_request):
         "name": "Краска",
         "SKU": "SNI/01/136/0500",
         "barcode": "4600702084566",
-        "category_id": str(category.id),
+        "category": {
+            "id": str(category.id),
+            "name": category.name,
+            "parent_id": str(category.parent_id) if category.parent_id else None,
+        },
     }, resp.get("error")
 
 
