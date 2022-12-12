@@ -56,3 +56,28 @@ class ProductCategorySchema(BaseModel):
             name=category.name,
             parent_id=category.parent_id,
         )
+
+
+class ProductCreateSchema(BaseModel):
+    name: str = Field(..., title="Название товара")
+    SKU: str = Field(..., title="SKU товара")
+    barcode: str | None = Field(None, title="Штрих-код товара (если есть)")
+    category_id: uuid.UUID | None = Field(None, title="ID категории товара")
+
+
+class ProductSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID")
+    name: str = Field(..., title="Название товара")
+    SKU: str = Field(..., title="SKU товара")
+    barcode: str | None = Field(None, title="Штрих-код товара (если есть)")
+    category_id: uuid.UUID | None = Field(None, title="ID категории товара")
+
+    @classmethod
+    def from_model(cls, product: models.Product):
+        return cls(
+            id=product.id,
+            name=product.name,
+            SKU=product.SKU,
+            barcode=product.barcode,
+            category_id=product.category_id,
+        )

@@ -15,12 +15,18 @@ api_v1 = Entrypoint(
     "/api/v1/web/jsonrpc",
     name="web",
     summary="Web JSON_RPC entrypoint",
+    errors=[
+        errors.AccessDenied,
+    ]
 )
 
 
 @api_v1.method(
     tags=["web", "auth"],
     summary="Войти",
+    errors=[
+        errors.WrongCredentials,
+    ]
 )
 def login(username: str, password: str) -> schemas.LoginResponseSchema:
     session = auth.login(username, password)
@@ -36,6 +42,9 @@ def login(username: str, password: str) -> schemas.LoginResponseSchema:
 @api_v1.method(
     tags=["web", "warehouse"],
     summary="Добавить склад",
+    errors=[
+        errors.WarehouseAlreadyExists,
+    ]
 )
 def add_warehouse(
     _: auth.Session = Depends(dependencies.get_session),
@@ -58,6 +67,7 @@ def rename_warehouse(
     warehouse_id: uuid.UUID = Body(..., title="ID склада", alias="id"),
     new_name: str = Body(..., title="Новое название"),
 ) -> schemas.WarehouseSchema:
+    # FIXME: catch warehouse not found
     with transaction.atomic():
         warehouse = models.Warehouse.objects.select_for_update(
             of=("self",), no_key=True
@@ -76,6 +86,7 @@ def rename_warehouse(
 def get_warehouses(
     _: auth.Session = Depends(dependencies.get_session),
 ) -> list[schemas.WarehouseSchema]:
+    # FIXME: catch warehouse not found
     warehouses = list(models.Warehouse.objects.order_by("name").all())
     return [schemas.WarehouseSchema.from_model(warehouse) for warehouse in warehouses]
 
@@ -83,6 +94,10 @@ def get_warehouses(
 @api_v1.method(
     tags=["web", "products"],
     summary="Добавить новую категорию товаров",
+    errors=[
+        errors.ProductCategoryNotFound,
+        errors.ProductCategoryAlreadyExists,
+    ]
 )
 def add_product_category(
     _: auth.Session = Depends(dependencies.get_session),
@@ -107,6 +122,9 @@ def add_product_category(
 @api_v1.method(
     tags=["web", "products"],
     summary="Переименовать категорию товаров",
+    errors=[
+        errors.ProductCategoryNotFound,
+    ]
 )
 def rename_product_category(
     _: auth.Session = Depends(dependencies.get_session),
@@ -148,3 +166,28 @@ def get_product_categories(
     return [
         schemas.ProductCategorySchema.from_model(category) for category in categories
     ]
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Добавить товар",
+)
+def add_product(
+    _: auth.Session = Depends(dependencies.get_session),
+    product_data: schemas.ProductCreateSchema = Body(..., title="Данные для создания товара"),
+) -> schemas.ProductSchema:
+    try:
+        product = models.Product.objects.create(
+            name=product_data.name,
+            SKU=product_data.SKU,
+            barcode=product_data.barcode,
+            category_id=product_data.category_id,
+        )
+    except django.db.IntegrityError as exc:
+        if "violates unique constraint" in str(exc):
+            raise errors.ProductAlreadyExists
+        elif "violates foreign key constraint" in str(exc):
+            raise errors.ProductCategoryNotFound
+        raise
+
+    return schemas.ProductSchema.from_model(product)

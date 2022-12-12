@@ -24,3 +24,8 @@ class ProductCategoryAlreadyExists(BaseError):
 class ProductCategoryNotFound(BaseError):
     CODE = 3002
     MESSAGE = "Product category not found"
+
+
+class ProductAlreadyExists(BaseError):
+    CODE = 4001
+    MESSAGE = "Product already exists"
