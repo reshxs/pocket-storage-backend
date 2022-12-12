@@ -44,7 +44,7 @@ class ProductFactory(DjangoModelFactory):
     class Meta:
         model = models.Product
 
-    name = factory.Faker('word')
-    SKU = factory.Faker('isbn10')  # TODO: генерировать SKU
-    barcode = factory.Faker('ean')
+    name = factory.Faker("word")
+    SKU = factory.Faker("isbn10")  # TODO: генерировать SKU
+    barcode = factory.Faker("ean")
     category = factory.SubFactory(ProductCategoryFactory)

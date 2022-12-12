@@ -2,6 +2,7 @@ import uuid
 
 import django.db
 from django.db import transaction
+from django.utils import timezone
 from fastapi import Depends, Body
 from fastapi_jsonrpc import Entrypoint
 
@@ -17,7 +18,7 @@ api_v1 = Entrypoint(
     summary="Web JSON_RPC entrypoint",
     errors=[
         errors.AccessDenied,
-    ]
+    ],
 )
 
 
@@ -26,7 +27,7 @@ api_v1 = Entrypoint(
     summary="Войти",
     errors=[
         errors.WrongCredentials,
-    ]
+    ],
 )
 def login(username: str, password: str) -> schemas.LoginResponseSchema:
     session = auth.login(username, password)
@@ -44,7 +45,7 @@ def login(username: str, password: str) -> schemas.LoginResponseSchema:
     summary="Добавить склад",
     errors=[
         errors.WarehouseAlreadyExists,
-    ]
+    ],
 )
 def add_warehouse(
     _: auth.Session = Depends(dependencies.get_session),
@@ -97,7 +98,7 @@ def get_warehouses(
     errors=[
         errors.ProductCategoryNotFound,
         errors.ProductCategoryAlreadyExists,
-    ]
+    ],
 )
 def add_product_category(
     _: auth.Session = Depends(dependencies.get_session),
@@ -124,7 +125,7 @@ def add_product_category(
     summary="Переименовать категорию товаров",
     errors=[
         errors.ProductCategoryNotFound,
-    ]
+    ],
 )
 def rename_product_category(
     _: auth.Session = Depends(dependencies.get_session),
@@ -171,10 +172,16 @@ def get_product_categories(
 @api_v1.method(
     tags=["web", "products"],
     summary="Добавить товар",
+    errors=[
+        errors.ProductAlreadyExists,
+        errors.ProductCategoryNotFound,
+    ],
 )
 def add_product(
     _: auth.Session = Depends(dependencies.get_session),
-    product_data: schemas.ProductCreateSchema = Body(..., title="Данные для создания товара"),
+    product_data: schemas.ProductCreateSchema = Body(
+        ..., title="Данные для создания товара"
+    ),
 ) -> schemas.ProductSchema:
     try:
         product = models.Product.objects.create(
@@ -189,5 +196,63 @@ def add_product(
         elif "violates foreign key constraint" in str(exc):
             raise errors.ProductCategoryNotFound
         raise
+
+    return schemas.ProductSchema.from_model(product)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Редактировать товар",
+    errors=[
+        errors.ProductNotFound,
+        errors.ProductAlreadyExists,
+        errors.ProductCategoryNotFound,
+    ],
+)
+def update_product(
+    _: auth.Session = Depends(dependencies.get_session),
+    product_id: uuid.UUID = Body(..., title="ID товара", alias="id"),
+    product_data: schemas.ProductUpdateSchema = Body(
+        ..., title="Данные для изменения товара"
+    ),
+) -> schemas.ProductSchema:
+    update_kwargs = product_data.dict(exclude_none=True)
+    with transaction.atomic():
+        try:
+            product = models.Product.objects.select_for_update(
+                of=("self",), no_key=True
+            ).get(id=product_id)
+        except models.Product.DoesNotExist:
+            raise errors.ProductNotFound
+
+        if update_kwargs:
+            category_id = update_kwargs.pop("category_id", None)
+            if category_id is not None:
+                try:
+                    category = models.ProductCategory.objects.get(id=category_id)
+                except models.ProductCategory.DoesNotExist:
+                    raise errors.ProductCategoryNotFound
+
+                product.category = category
+
+            for k, v in update_kwargs.items():
+                setattr(product, k, v)
+
+            product.updated_at = timezone.now()
+
+            try:
+                product.save(
+                    update_fields=[
+                        "name",
+                        "SKU",
+                        "barcode",
+                        "category_id",
+                        "updated_at",
+                    ]
+                )
+            except django.db.IntegrityError as exc:
+                if "violates unique constraint" in str(exc):
+                    raise errors.ProductAlreadyExists
+                raise
 
     return schemas.ProductSchema.from_model(product)

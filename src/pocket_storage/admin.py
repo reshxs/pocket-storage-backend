@@ -7,10 +7,10 @@ from django.utils.html import format_html
 
 from pocket_storage import models
 
-_AdminActionT = tp.TypeVar('_AdminActionT', bound=tp.Callable[..., object])
+_AdminActionT = tp.TypeVar("_AdminActionT", bound=tp.Callable[..., object])
 
-admin.site.index_title = 'Pocket storage'
-admin.site.site_header = 'Pocket storage'
+admin.site.index_title = "Pocket storage"
+admin.site.site_header = "Pocket storage"
 
 
 class _AdminActionAttrs(tp.Protocol[_AdminActionT]):
@@ -36,12 +36,14 @@ def admin_attrs(
 
 
 class ParentProductCategoryLinkMixin(object):
-    @admin_attrs(short_description='Родительская категория')
+    @admin_attrs(short_description="Родительская категория")
     def parent_link(self, obj):
         if obj.parent is None:
-            return format_html('')
+            return format_html("")
 
-        link = reverse('admin:pocket_storage_productcategory_change', args=[obj.parent_id])
+        link = reverse(
+            "admin:pocket_storage_productcategory_change", args=[obj.parent_id]
+        )
         return format_html(f'<a href="{link}">{obj.parent.name}</a>')
 
 
@@ -52,13 +54,17 @@ class WarehouseModelAdmin(admin.ModelAdmin):
 
 
 class ProductCategoryParentFilter(AutocompleteFilter):
-    title = 'Родительская категория'
-    field_name = 'parent'
+    title = "Родительская категория"
+    field_name = "parent"
 
 
 @admin.register(models.ProductCategory)
 class ProductCategoryModelAdmin(ParentProductCategoryLinkMixin, admin.ModelAdmin):
-    list_display = ('name', 'id', 'parent_link',)
-    list_display_links = ('name',)
-    search_fields = ('id', 'name', 'parent__name')
+    list_display = (
+        "name",
+        "id",
+        "parent_link",
+    )
+    list_display_links = ("name",)
+    search_fields = ("id", "name", "parent__name")
     list_filter = [ProductCategoryParentFilter]

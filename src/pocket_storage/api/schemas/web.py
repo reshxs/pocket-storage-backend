@@ -65,6 +65,13 @@ class ProductCreateSchema(BaseModel):
     category_id: uuid.UUID | None = Field(None, title="ID категории товара")
 
 
+class ProductUpdateSchema(BaseModel):
+    name: str | None = Field(None, title="Название товара")
+    SKU: str | None = Field(None, title="SKU товара")
+    barcode: str | None = Field(None, title="Штрих-код товара (если есть)")
+    category_id: uuid.UUID | None = Field(None, title="ID категории товара")
+
+
 class ProductSchema(BaseModel):
     id: uuid.UUID = Field(..., title="ID")
     name: str = Field(..., title="Название товара")
