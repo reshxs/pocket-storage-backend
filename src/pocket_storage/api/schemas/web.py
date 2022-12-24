@@ -1,3 +1,4 @@
+import datetime as dt
 import uuid
 
 from django.contrib.auth.models import User
@@ -92,6 +93,18 @@ class ProductSchema(BaseModel):
         )
 
 
+class ShortProductSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID")
+    name: str = Field(..., title="Название товара")
+
+    @classmethod
+    def from_model(cls, product: models.Product):
+        return cls(
+            id=product.id,
+            name=product.name,
+        )
+
+
 class ProductFilters(BaseModel):
     search_str: str | None = Field(
         None,
@@ -182,3 +195,36 @@ class UpdateEmployeeSchema(BaseModel):
     last_name: str | None = Field(None, title="Фамилия")
     middle_name: str | None = Field(None, title="Отчество")
     position_id: uuid.UUID | None = Field(None, title="ID должности")
+
+
+class StorageUnitFilters(BaseModel):
+    warehouse_id__in: list[uuid.UUID] | None = Field(None, title='ID складов', alias='warehouse_ids')
+    state__in: list[models.StorageUnitState] | None = Field(None, title='Состояния', alias='states')
+    created_at__gte: dt.datetime | None = Field(None, title='Создано после')
+    created_at__lte: dt.datetime | None = Field(None, title='Создано до')
+    updated_at__gte: dt.datetime | None = Field(None, title='Обновлено до')
+    updated_at__lte: dt.datetime | None = Field(None, title='Обновлено после')
+
+    def filter_query(self, query: models.QuerySet):
+        filter_kwargs = self.dict(exclude_none=True)
+        return query.filter(**filter_kwargs)
+
+
+class StorageUnitSchema(BaseModel):
+    id: uuid.UUID = Field(..., title='ID единицы хранения')
+    product: ShortProductSchema = Field(..., title='Товар')
+    warehouse: WarehouseSchema = Field(..., title='Склад')
+    state: models.StorageUnitState = Field(..., title='Состояние')
+    created_at: dt.datetime = Field(..., title='Создано', description='Дата/Время создания записи')
+    updated_at: dt.datetime | None = Field(..., title='Обновлено', description='Дата/Время обновления записи')
+
+    @classmethod
+    def from_model(cls, storage_unit: models.StorageUnit):
+        return cls(
+            id=storage_unit.id,
+            product=ShortProductSchema.from_model(storage_unit.product),
+            warehouse=WarehouseSchema.from_model(storage_unit.warehouse),
+            state=storage_unit.state,
+            created_at=storage_unit.created_at,
+            updated_at=storage_unit.updated_at,
+        )

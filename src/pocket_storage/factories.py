@@ -65,3 +65,12 @@ class EmployeeFactory(DjangoModelFactory):
     last_name = factory.Faker("last_name")
     middle_name = factory.Faker("middle_name")
     position = factory.SubFactory(EmployeePositionFactory)
+
+
+class StorageUnitFactory(DjangoModelFactory):
+    class Meta:
+        model = models.StorageUnit
+
+    product = factory.SubFactory(ProductFactory)
+    warehouse = factory.SubFactory(WarehouseFactory)
+    state = models.StorageUnitState.NEW

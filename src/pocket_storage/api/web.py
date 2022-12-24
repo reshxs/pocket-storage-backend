@@ -457,3 +457,32 @@ def update_employee(
         employee.save()
 
     return schemas.EmployeeSchema.from_model(employee)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Получить список единиц хранения продукта",
+    errors=[
+        errors.ProductNotFound
+    ]
+)
+def get_storage_units(
+    _: auth.Session = Depends(dependencies.get_session),
+    any_pagination: pagination.AnyPagination = Depends(dependencies.get_mutual_exclusive_pagination),
+    product_id: uuid.UUID = Body(..., title='ID товара'),
+    filters: schemas.StorageUnitFilters = Body(schemas.StorageUnitFilters(), title='Фильтрация'),
+) -> pagination.PaginatedResponse[schemas.StorageUnitSchema]:
+    product = models.Product.objects.get_or_none(id=product_id)
+    if not product:
+        raise errors.ProductNotFound
+
+    query = (
+        models.StorageUnit.objects
+        .select_related('product', 'warehouse')
+        .order_by('warehouse', '-updated_at')
+        .filter(product_id=product_id)
+    )
+    query = filters.filter_query(query)
+
+    paginator = pagination.TypedPaginator(schemas.StorageUnitSchema, query)
+    return paginator.get_response(any_pagination)

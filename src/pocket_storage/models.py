@@ -189,13 +189,13 @@ class StorageUnit(BaseModel):
         primary_key=True,
         default=uuid.uuid4,
     )
-    Product = models.ForeignKey(
+    product = models.ForeignKey(
         Product,
         verbose_name="Товар",
         on_delete=models.RESTRICT,
         related_name="storage_units",
     )
-    Warehouse = models.ForeignKey(
+    warehouse = models.ForeignKey(
         Warehouse,
         verbose_name="Склад",
         on_delete=models.RESTRICT,
