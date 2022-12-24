@@ -12,34 +12,34 @@ def test_ok(web_request):
     assert not models.EmployeePosition.objects.exists()
 
     resp = web_request(
-        'add_employee_position',
+        "add_employee_position",
         {
-            'name': 'Кладовщик',
+            "name": "Кладовщик",
         },
     )
 
     created_position = models.EmployeePosition.objects.get()
-    assert created_position.name == 'Кладовщик'
+    assert created_position.name == "Кладовщик"
 
-    assert resp.get('result') == {
-        'id': str(created_position.id),
-        'name': 'Кладовщик',
-    }, resp.get('error')
+    assert resp.get("result") == {
+        "id": str(created_position.id),
+        "name": "Кладовщик",
+    }, resp.get("error")
 
 
 def test_already_exists__return_error(web_request):
     existing_position = factories.EmployeePositionFactory.create()
 
     resp = web_request(
-        'add_employee_position',
+        "add_employee_position",
         {
-            'name': existing_position.name,
+            "name": existing_position.name,
         },
     )
 
-    assert resp.get('error') == {
-        'code': 5001,
-        'message': 'Employee position already exists',
+    assert resp.get("error") == {
+        "code": 5001,
+        "message": "Employee position already exists",
     }
 
     assert not models.EmployeePosition.objects.exclude(id=existing_position.id).exists()

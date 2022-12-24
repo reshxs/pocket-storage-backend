@@ -1,6 +1,7 @@
 import uuid
 
 from django.contrib.auth.models import User
+from django.contrib.postgres.search import SearchVector
 from pydantic import BaseModel
 from pydantic import Field
 from django.db.models import Q
@@ -130,3 +131,54 @@ class EmployeePositionSchema(BaseModel):
             id=position.id,
             name=position.name,
         )
+
+
+class CreateEmployeeSchema(BaseModel):
+    first_name: str = Field(..., title="Имя")
+    last_name: str = Field(..., title="Фамилия")
+    middle_name: str | None = Field(None, title="Отчество")
+    position_id: uuid.UUID = Field(..., title="ID должности")
+
+
+class EmployeeSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID сотрудника")
+    first_name: str = Field(..., title="Имя")
+    last_name: str = Field(..., title="Фамилия")
+    middle_name: str | None = Field(None, title="Отчество")
+    position: EmployeePositionSchema = Field(..., title="Должность")
+
+    @classmethod
+    def from_model(cls, employee: models.Employee):
+        return cls(
+            id=employee.id,
+            first_name=employee.first_name,
+            last_name=employee.last_name,
+            middle_name=employee.middle_name,
+            position=EmployeePositionSchema.from_model(employee.position),
+        )
+
+
+class EmployeeFilters(BaseModel):
+    full_name_search: str | None = Field(
+        None, title="Поиск по имени", alias="full_name_search"
+    )
+    position_id__in: list[uuid.UUID] | None = Field(
+        None, title="Фильтрация по должности", alias="position_ids"
+    )
+
+    def filter_query(self, query: models.QuerySet):
+        if self.full_name_search:
+            query = query.annotate(
+                full_name_search=SearchVector("first_name", "last_name", "middle_name"),
+            )
+
+        return query.filter(
+            **self.dict(exclude_none=True),
+        )
+
+
+class UpdateEmployeeSchema(BaseModel):
+    first_name: str | None = Field(None, title="Имя")
+    last_name: str | None = Field(None, title="Фамилия")
+    middle_name: str | None = Field(None, title="Отчество")
+    position_id: uuid.UUID | None = Field(None, title="ID должности")

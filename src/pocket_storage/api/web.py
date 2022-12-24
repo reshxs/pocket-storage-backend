@@ -314,7 +314,7 @@ def get_products(
     summary="Добавить должность сотрудника",
     errors=[
         errors.EmployeePositionAlreadyExists,
-    ]
+    ],
 )
 def add_employee_position(
     _: auth.Session = Depends(dependencies.get_session),
@@ -335,7 +335,125 @@ def add_employee_position(
     summary="Получить список должностей",
 )
 def get_employee_positions(
-    _: auth = Depends(dependencies.get_session)
+    _: auth = Depends(dependencies.get_session),
 ) -> list[schemas.EmployeePositionSchema]:
     positions = list(models.EmployeePosition.objects.all())
-    return[schemas.EmployeePositionSchema.from_model(position) for position in positions]
+    return [
+        schemas.EmployeePositionSchema.from_model(position) for position in positions
+    ]
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Добавить сотрудника",
+    errors=[
+        errors.EmployeePositionNotFound,
+    ],
+)
+def add_employee(
+    _: auth.Session = Depends(dependencies.get_session),
+    employee_data: schemas.CreateEmployeeSchema = Body(
+        ..., title="Данные нового сотрудника"
+    ),
+) -> schemas.EmployeeSchema:
+    employee_data = employee_data.dict()
+
+    position_id = employee_data.pop("position_id")
+    position = models.EmployeePosition.objects.get_or_none(id=position_id)
+
+    if not position:
+        raise errors.EmployeePositionNotFound
+
+    employee = models.Employee.objects.create(
+        **employee_data,
+        position=position,
+    )
+
+    return schemas.EmployeeSchema.from_model(employee)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Получить сотрудника по ID",
+    errors=[
+        errors.EmployeeNotFound,
+    ],
+)
+def get_employee(
+    _: auth.Session = Depends(dependencies.get_session),
+    employee_id: uuid.UUID = Body(..., title="ID сотрудника"),
+) -> schemas.EmployeeSchema:
+    employee = models.Employee.objects.select_related("position").get_or_none(
+        id=employee_id
+    )
+
+    if not employee:
+        raise errors.EmployeeNotFound
+
+    return schemas.EmployeeSchema.from_model(employee)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Получить список сотрудников",
+)
+def get_employees(
+    _: auth.Session = Depends(dependencies.get_session),
+    any_pagination: pagination.AnyPagination = Depends(
+        dependencies.get_mutual_exclusive_pagination
+    ),
+    filters: schemas.EmployeeFilters = Body(
+        schemas.EmployeeFilters(), title="Фильтрация"
+    ),
+) -> pagination.PaginatedResponse[schemas.EmployeeSchema]:
+    query = models.Employee.objects.select_related("position").order_by(
+        "last_name", "first_name", "middle_name"
+    )
+    query = filters.filter_query(query)
+
+    paginator = pagination.TypedPaginator(schemas.EmployeeSchema, query)
+    return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Изменить сотрудника",
+    errors=[
+        errors.EmployeeNotFound,
+        errors.EmployeePositionNotFound,
+    ],
+)
+def update_employee(
+    _: auth.Session = Depends(dependencies.get_session),
+    employee_id: uuid.UUID = Body(..., title="ID сотрудника"),
+    employee_data: schemas.UpdateEmployeeSchema = Body(
+        ..., title="Данные для изменения сотрудника"
+    ),
+) -> schemas.EmployeeSchema:
+    with transaction.atomic():
+        employee = models.Employee.objects.select_for_update(of=("self",)).get_or_none(
+            id=employee_id
+        )
+
+        if not employee:
+            raise errors.EmployeeNotFound
+
+        employee_data = employee_data.dict(exclude_none=True)
+        _update_fields = []
+
+        position_id = employee_data.pop("position_id", None)
+        if position_id:
+            position = models.EmployeePosition.objects.get_or_none(id=position_id)
+            if not position:
+                raise errors.EmployeePositionNotFound
+
+            employee.position = position
+            _update_fields.append("position")
+
+        for key, value in employee_data.items():
+            setattr(employee, key, value)
+            _update_fields.append(key)
+
+        employee.save()
+
+    return schemas.EmployeeSchema.from_model(employee)

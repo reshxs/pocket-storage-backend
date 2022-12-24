@@ -54,4 +54,14 @@ class EmployeePositionFactory(DjangoModelFactory):
     class Meta:
         model = models.EmployeePosition
 
-    name = factory.Faker('word')
+    name = factory.Faker("word")
+
+
+class EmployeeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Employee
+
+    first_name = factory.Faker("name")
+    last_name = factory.Faker("last_name")
+    middle_name = factory.Faker("middle_name")
+    position = factory.SubFactory(EmployeePositionFactory)

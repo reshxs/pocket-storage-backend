@@ -168,7 +168,7 @@ class Employee(BaseModel):
     position = models.ForeignKey(
         EmployeePosition,
         on_delete=models.RESTRICT,
-        verbose_name="Должность"
+        verbose_name="Должность",
     )
 
 
