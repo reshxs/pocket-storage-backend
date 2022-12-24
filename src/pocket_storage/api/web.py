@@ -10,6 +10,7 @@ from pocket_storage import auth
 from pocket_storage import models
 from . import dependencies
 from . import errors
+from . import pagination
 from .schemas import web as schemas
 
 api_v1 = Entrypoint(
@@ -287,3 +288,22 @@ def get_product(
         raise errors.ProductNotFound
 
     return schemas.ProductSchema.from_model(product)
+
+
+@api_v1.method(
+    tags=["web", "product"],
+    summary="Получить список продуктов",
+)
+def get_products(
+    _: auth.Session = Depends(dependencies.get_session),
+    any_pagination: pagination.AnyPagination = Depends(
+        dependencies.get_mutual_exclusive_pagination
+    ),
+    filters: schemas.ProductFilters = Body(
+        schemas.ProductFilters(), title="Фильтрация"
+    ),
+) -> pagination.PaginatedResponse[schemas.ProductSchema]:
+    query = filters.filter_query(models.Product.objects.all())
+
+    paginator = pagination.TypedPaginator(schemas.ProductSchema, query)
+    return paginator.get_response(any_pagination)

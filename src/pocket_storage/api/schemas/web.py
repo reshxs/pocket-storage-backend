@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.models import User
 from pydantic import BaseModel
 from pydantic import Field
+from django.db.models import Q
 
 from pocket_storage import models
 
@@ -88,3 +89,32 @@ class ProductSchema(BaseModel):
             barcode=product.barcode,
             category=ProductCategorySchema.from_model(product.category),
         )
+
+
+class ProductFilters(BaseModel):
+    search_str: str | None = Field(
+        None,
+        title="Поисковый запрос",
+        description="Поиск по названию, SKU и штрих-коду товара",
+        alias="search",
+    )
+    category_id: uuid.UUID | None = Field(
+        None,
+        title="Фильтр по категории",
+        description="На данный момент не работает с родительскими категориями",
+    )
+
+    def filter_query(self, query: models.QuerySet):
+        if self.search_str:
+            query = query.filter(
+                Q(
+                    Q(name__icontains=self.search_str)
+                    | Q(SKU__icontains=self.search_str)
+                    | Q(barcode__icontains=self.search_str)
+                ),
+            )
+
+        if self.category_id:
+            query = query.filter(category_id=self.category_id)
+
+        return query

@@ -1,6 +1,8 @@
 import uuid
 
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.db import models
+from django.db.models.functions import Upper
 
 
 class QuerySet(models.QuerySet):
