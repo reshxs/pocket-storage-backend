@@ -74,3 +74,13 @@ class StorageUnitFactory(DjangoModelFactory):
     product = factory.SubFactory(ProductFactory)
     warehouse = factory.SubFactory(WarehouseFactory)
     state = models.StorageUnitState.NEW
+
+
+class StorageUnitOperationFactory(DjangoModelFactory):
+    class Meta:
+        model = models.StorageUnitOperation
+
+    storage_unit = factory.SubFactory(StorageUnitFactory)
+    employee = factory.SubFactory(EmployeeFactory)
+    initial_state = models.StorageUnitState.NEW
+    final_state = models.StorageUnitState.NEW

@@ -198,12 +198,16 @@ class UpdateEmployeeSchema(BaseModel):
 
 
 class StorageUnitFilters(BaseModel):
-    warehouse_id__in: list[uuid.UUID] | None = Field(None, title='ID складов', alias='warehouse_ids')
-    state__in: list[models.StorageUnitState] | None = Field(None, title='Состояния', alias='states')
-    created_at__gte: dt.datetime | None = Field(None, title='Создано после')
-    created_at__lte: dt.datetime | None = Field(None, title='Создано до')
-    updated_at__gte: dt.datetime | None = Field(None, title='Обновлено до')
-    updated_at__lte: dt.datetime | None = Field(None, title='Обновлено после')
+    warehouse_id__in: list[uuid.UUID] | None = Field(
+        None, title="ID складов", alias="warehouse_ids"
+    )
+    state__in: list[models.StorageUnitState] | None = Field(
+        None, title="Состояния", alias="states"
+    )
+    created_at__gte: dt.datetime | None = Field(None, title="Создано после")
+    created_at__lte: dt.datetime | None = Field(None, title="Создано до")
+    updated_at__gte: dt.datetime | None = Field(None, title="Обновлено до")
+    updated_at__lte: dt.datetime | None = Field(None, title="Обновлено после")
 
     def filter_query(self, query: models.QuerySet):
         filter_kwargs = self.dict(exclude_none=True)
@@ -211,12 +215,16 @@ class StorageUnitFilters(BaseModel):
 
 
 class StorageUnitSchema(BaseModel):
-    id: uuid.UUID = Field(..., title='ID единицы хранения')
-    product: ShortProductSchema = Field(..., title='Товар')
-    warehouse: WarehouseSchema = Field(..., title='Склад')
-    state: models.StorageUnitState = Field(..., title='Состояние')
-    created_at: dt.datetime = Field(..., title='Создано', description='Дата/Время создания записи')
-    updated_at: dt.datetime | None = Field(..., title='Обновлено', description='Дата/Время обновления записи')
+    id: uuid.UUID = Field(..., title="ID единицы хранения")
+    product: ShortProductSchema = Field(..., title="Товар")
+    warehouse: WarehouseSchema = Field(..., title="Склад")
+    state: models.StorageUnitState = Field(..., title="Состояние")
+    created_at: dt.datetime = Field(
+        ..., title="Создано", description="Дата/Время создания записи"
+    )
+    updated_at: dt.datetime | None = Field(
+        ..., title="Обновлено", description="Дата/Время обновления записи"
+    )
 
     @classmethod
     def from_model(cls, storage_unit: models.StorageUnit):
@@ -227,4 +235,26 @@ class StorageUnitSchema(BaseModel):
             state=storage_unit.state,
             created_at=storage_unit.created_at,
             updated_at=storage_unit.updated_at,
+        )
+
+
+class StorageUnitOperationSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID действия")
+    storage_unit_id: uuid.UUID = Field(..., title="ID единицы хранения")
+    employee: EmployeeSchema = Field(
+        ..., title="Сотрудник", description="Тот, кто совершил действие"
+    )
+    initial_state: models.StorageUnitState = Field(..., title="Начальное состояние")
+    final_state: models.StorageUnitState = Field(..., title="Окончательное состояние")
+    created_at: dt.datetime = Field(..., title="Дата/Время совершения действия")
+
+    @classmethod
+    def from_model(cls, operation: models.StorageUnitOperation):
+        return cls(
+            id=operation.id,
+            storage_unit_id=operation.storage_unit_id,
+            employee=EmployeeSchema.from_model(operation.employee),
+            initial_state=operation.initial_state,
+            final_state=operation.final_state,
+            created_at=operation.created_at,
         )

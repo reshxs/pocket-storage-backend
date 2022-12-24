@@ -462,27 +462,51 @@ def update_employee(
 @api_v1.method(
     tags=["web", "products"],
     summary="Получить список единиц хранения продукта",
-    errors=[
-        errors.ProductNotFound
-    ]
+    errors=[errors.ProductNotFound],
 )
 def get_storage_units(
     _: auth.Session = Depends(dependencies.get_session),
-    any_pagination: pagination.AnyPagination = Depends(dependencies.get_mutual_exclusive_pagination),
-    product_id: uuid.UUID = Body(..., title='ID товара'),
-    filters: schemas.StorageUnitFilters = Body(schemas.StorageUnitFilters(), title='Фильтрация'),
+    any_pagination: pagination.AnyPagination = Depends(
+        dependencies.get_mutual_exclusive_pagination
+    ),
+    product_id: uuid.UUID = Body(..., title="ID товара"),
+    filters: schemas.StorageUnitFilters = Body(
+        schemas.StorageUnitFilters(), title="Фильтрация"
+    ),
 ) -> pagination.PaginatedResponse[schemas.StorageUnitSchema]:
     product = models.Product.objects.get_or_none(id=product_id)
     if not product:
         raise errors.ProductNotFound
 
     query = (
-        models.StorageUnit.objects
-        .select_related('product', 'warehouse')
-        .order_by('warehouse', '-updated_at')
+        models.StorageUnit.objects.select_related("product", "warehouse")
+        .order_by("warehouse", "-updated_at")
         .filter(product_id=product_id)
     )
     query = filters.filter_query(query)
 
     paginator = pagination.TypedPaginator(schemas.StorageUnitSchema, query)
+    return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Получить список действий с единицей хранения товара",
+    errors=[errors.StorageUnitNotFound],
+)
+def get_storage_unit_operations(
+    _: auth.Session = Depends(dependencies.get_session),
+    any_pagination: pagination.AnyPagination = Depends(
+        dependencies.get_mutual_exclusive_pagination
+    ),
+    storage_unit_id: uuid.UUID = Body(..., title="ID единицы хранения"),
+) -> pagination.PaginatedResponse[schemas.StorageUnitOperationSchema]:
+    storage_unit = models.StorageUnit.objects.get_or_none(id=storage_unit_id)
+    if not storage_unit:
+        raise errors.StorageUnitNotFound
+
+    query = models.StorageUnitOperation.objects.filter(
+        storage_unit=storage_unit,
+    ).order_by("-created_at")
+    paginator = pagination.TypedPaginator(schemas.StorageUnitOperationSchema, query)
     return paginator.get_response(any_pagination)

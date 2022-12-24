@@ -49,3 +49,8 @@ class EmployeePositionNotFound(BaseError):
 class EmployeeNotFound(BaseError):
     CODE = 6002
     MESSAGE = "Employee not found"
+
+
+class StorageUnitNotFound(BaseError):
+    CODE = 7002
+    MESSAGE = "Storage unit not found"
