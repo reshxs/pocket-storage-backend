@@ -1,6 +1,8 @@
 import uuid
 
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.db import models
+from django.db.models.functions import Upper
 
 
 class QuerySet(models.QuerySet):
@@ -92,12 +94,21 @@ class Product(BaseModel):
     )
     SKU = models.CharField(
         "SKU",
-        max_length=16,
+        max_length=24,
         unique=True,
     )
-    barcode = models.IntegerField(
+    barcode = models.CharField(
         "Штрих-код",
+        max_length=24,
         unique=True,
+        null=True,
+        blank=True,
+    )
+
+    category = models.ForeignKey(
+        ProductCategory,
+        on_delete=models.RESTRICT,
+        verbose_name="Категория",
         null=True,
         blank=True,
     )
