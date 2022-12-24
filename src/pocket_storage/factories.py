@@ -48,3 +48,10 @@ class ProductFactory(DjangoModelFactory):
     SKU = factory.Faker("isbn10")  # TODO: генерировать SKU
     barcode = factory.Faker("ean")
     category = factory.SubFactory(ProductCategoryFactory)
+
+
+class EmployeePositionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.EmployeePosition
+
+    name = factory.Faker('word')

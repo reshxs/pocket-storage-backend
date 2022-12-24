@@ -118,3 +118,15 @@ class ProductFilters(BaseModel):
             query = query.filter(category_id=self.category_id)
 
         return query
+
+
+class EmployeePositionSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID должности")
+    name: str = Field(..., title="Название дложности")
+
+    @classmethod
+    def from_model(cls, position: models.EmployeePosition):
+        return cls(
+            id=position.id,
+            name=position.name,
+        )

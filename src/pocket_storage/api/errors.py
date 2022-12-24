@@ -34,3 +34,8 @@ class ProductAlreadyExists(BaseError):
 class ProductNotFound(BaseError):
     CODE = 4002
     MESSAGE = "Product not found"
+
+
+class EmployeePositionAlreadyExists(BaseError):
+    CODE = 5001
+    MESSAGE = "Employee position already exists"

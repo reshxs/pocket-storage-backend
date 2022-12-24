@@ -1,8 +1,7 @@
 import uuid
 
-from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.db import models
-from django.db.models.functions import Upper
+from django.utils import timezone
 
 
 class QuerySet(models.QuerySet):
@@ -123,4 +122,144 @@ class Product(BaseModel):
         "Создан",
         auto_now_add=True,
         help_text="Дата/Время добавления записи",
+    )
+
+
+class EmployeePosition(BaseModel):
+    """Должность сотрудника."""
+
+    class Meta:
+        verbose_name = "Должность"
+        verbose_name_plural = "Должности сотрудника"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    name = models.CharField(
+        "Название",
+        max_length=50,
+        unique=True,
+    )
+
+
+class Employee(BaseModel):
+    """Сотрудник склада."""
+
+    class Meta:
+        verbose_name = "Сотрудник"
+        verbose_name_plural = "Сотрудники"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    first_name = models.CharField("Имя", max_length=50)
+    last_name = models.CharField(
+        "Фамилия",
+        max_length=50,
+    )
+    middle_name = models.CharField(
+        "Отчество",
+        max_length=50,
+        null=True,
+        blank=True,
+    )
+    position = models.ForeignKey(
+        EmployeePosition,
+        on_delete=models.RESTRICT,
+        verbose_name="Должность"
+    )
+
+
+class StorageUnitState(models.TextChoices):
+    NEW = "new", "новая"
+
+
+class StorageUnit(BaseModel):
+    """Единица хранения."""
+
+    class Meta:
+        verbose_name = "Единица хранения"
+        verbose_name_plural = "Единицы хранения"
+
+    State = StorageUnitState
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    Product = models.ForeignKey(
+        Product,
+        verbose_name="Товар",
+        on_delete=models.RESTRICT,
+        related_name="storage_units",
+    )
+    Warehouse = models.ForeignKey(
+        Warehouse,
+        verbose_name="Склад",
+        on_delete=models.RESTRICT,
+        related_name="storage_units",
+    )
+
+    state = models.CharField(
+        "Состояние",
+        max_length=32,
+        choices=State.choices,
+        default=State.NEW,
+    )
+
+    updated_at = models.DateTimeField(
+        "Обновлено",
+        null=True,
+        blank=True,
+        help_text="Дата/Время обновления записи",
+    )
+    created_at = models.DateTimeField(
+        "Создано",
+        default=timezone.now,
+        help_text="Дата/Время создания записи",
+    )
+
+
+class StorageUnitOperation(BaseModel):
+    """Действие с единицей хранения."""
+
+    class Meta:
+        verbose_name = "Действие с единицей хранения"
+        verbose_name_plural = "Действия с единицей хранения"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    storage_unit = models.ForeignKey(
+        StorageUnit,
+        on_delete=models.CASCADE,
+        verbose_name="Единица хранения",
+        related_name="operations",
+    )
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.RESTRICT,
+        verbose_name="Сотрудник",
+        related_name="operations",
+        help_text="Сотрудник, совершивший действие",
+    )
+    initial_state = models.CharField(
+        "Начальное состояние",
+        max_length=32,
+        choices=StorageUnitState.choices,
+        help_text="Состояние единицы хранения до совершения действия",
+    )
+    final_state = models.CharField(
+        "Конечное состояние",
+        max_length=32,
+        choices=StorageUnitState.choices,
+        help_text="Состояние единицы хранения после совершения действия",
+    )
+    created_at = models.DateTimeField(
+        "Создано",
+        default=timezone.now,
+        help_text="Дата/Время совершения действия",
     )

@@ -307,3 +307,35 @@ def get_products(
 
     paginator = pagination.TypedPaginator(schemas.ProductSchema, query)
     return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Добавить должность сотрудника",
+    errors=[
+        errors.EmployeePositionAlreadyExists,
+    ]
+)
+def add_employee_position(
+    _: auth.Session = Depends(dependencies.get_session),
+    name: str = Body(..., title="Название должности"),
+) -> schemas.EmployeePositionSchema:
+    try:
+        created_position = models.EmployeePosition.objects.create(name=name)
+    except django.db.IntegrityError as exc:
+        if "violates unique constraint" in str(exc):
+            raise errors.EmployeePositionAlreadyExists
+        raise
+
+    return schemas.EmployeePositionSchema.from_model(created_position)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Получить список должностей",
+)
+def get_employee_positions(
+    _: auth = Depends(dependencies.get_session)
+) -> list[schemas.EmployeePositionSchema]:
+    positions = list(models.EmployeePosition.objects.all())
+    return[schemas.EmployeePositionSchema.from_model(position) for position in positions]
