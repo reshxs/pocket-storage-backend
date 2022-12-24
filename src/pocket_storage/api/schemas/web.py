@@ -1,6 +1,8 @@
+import datetime as dt
 import uuid
 
 from django.contrib.auth.models import User
+from django.contrib.postgres.search import SearchVector
 from pydantic import BaseModel
 from pydantic import Field
 from django.db.models import Q
@@ -91,6 +93,18 @@ class ProductSchema(BaseModel):
         )
 
 
+class ShortProductSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID")
+    name: str = Field(..., title="Название товара")
+
+    @classmethod
+    def from_model(cls, product: models.Product):
+        return cls(
+            id=product.id,
+            name=product.name,
+        )
+
+
 class ProductFilters(BaseModel):
     search_str: str | None = Field(
         None,
@@ -118,3 +132,129 @@ class ProductFilters(BaseModel):
             query = query.filter(category_id=self.category_id)
 
         return query
+
+
+class EmployeePositionSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID должности")
+    name: str = Field(..., title="Название дложности")
+
+    @classmethod
+    def from_model(cls, position: models.EmployeePosition):
+        return cls(
+            id=position.id,
+            name=position.name,
+        )
+
+
+class CreateEmployeeSchema(BaseModel):
+    first_name: str = Field(..., title="Имя")
+    last_name: str = Field(..., title="Фамилия")
+    middle_name: str | None = Field(None, title="Отчество")
+    position_id: uuid.UUID = Field(..., title="ID должности")
+
+
+class EmployeeSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID сотрудника")
+    first_name: str = Field(..., title="Имя")
+    last_name: str = Field(..., title="Фамилия")
+    middle_name: str | None = Field(None, title="Отчество")
+    position: EmployeePositionSchema = Field(..., title="Должность")
+
+    @classmethod
+    def from_model(cls, employee: models.Employee):
+        return cls(
+            id=employee.id,
+            first_name=employee.first_name,
+            last_name=employee.last_name,
+            middle_name=employee.middle_name,
+            position=EmployeePositionSchema.from_model(employee.position),
+        )
+
+
+class EmployeeFilters(BaseModel):
+    full_name_search: str | None = Field(
+        None, title="Поиск по имени", alias="full_name_search"
+    )
+    position_id__in: list[uuid.UUID] | None = Field(
+        None, title="Фильтрация по должности", alias="position_ids"
+    )
+
+    def filter_query(self, query: models.QuerySet):
+        if self.full_name_search:
+            query = query.annotate(
+                full_name_search=SearchVector("first_name", "last_name", "middle_name"),
+            )
+
+        return query.filter(
+            **self.dict(exclude_none=True),
+        )
+
+
+class UpdateEmployeeSchema(BaseModel):
+    first_name: str | None = Field(None, title="Имя")
+    last_name: str | None = Field(None, title="Фамилия")
+    middle_name: str | None = Field(None, title="Отчество")
+    position_id: uuid.UUID | None = Field(None, title="ID должности")
+
+
+class StorageUnitFilters(BaseModel):
+    warehouse_id__in: list[uuid.UUID] | None = Field(
+        None, title="ID складов", alias="warehouse_ids"
+    )
+    state__in: list[models.StorageUnitState] | None = Field(
+        None, title="Состояния", alias="states"
+    )
+    created_at__gte: dt.datetime | None = Field(None, title="Создано после")
+    created_at__lte: dt.datetime | None = Field(None, title="Создано до")
+    updated_at__gte: dt.datetime | None = Field(None, title="Обновлено до")
+    updated_at__lte: dt.datetime | None = Field(None, title="Обновлено после")
+
+    def filter_query(self, query: models.QuerySet):
+        filter_kwargs = self.dict(exclude_none=True)
+        return query.filter(**filter_kwargs)
+
+
+class StorageUnitSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID единицы хранения")
+    product: ShortProductSchema = Field(..., title="Товар")
+    warehouse: WarehouseSchema = Field(..., title="Склад")
+    state: models.StorageUnitState = Field(..., title="Состояние")
+    created_at: dt.datetime = Field(
+        ..., title="Создано", description="Дата/Время создания записи"
+    )
+    updated_at: dt.datetime | None = Field(
+        ..., title="Обновлено", description="Дата/Время обновления записи"
+    )
+
+    @classmethod
+    def from_model(cls, storage_unit: models.StorageUnit):
+        return cls(
+            id=storage_unit.id,
+            product=ShortProductSchema.from_model(storage_unit.product),
+            warehouse=WarehouseSchema.from_model(storage_unit.warehouse),
+            state=storage_unit.state,
+            created_at=storage_unit.created_at,
+            updated_at=storage_unit.updated_at,
+        )
+
+
+class StorageUnitOperationSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID действия")
+    storage_unit_id: uuid.UUID = Field(..., title="ID единицы хранения")
+    employee: EmployeeSchema = Field(
+        ..., title="Сотрудник", description="Тот, кто совершил действие"
+    )
+    initial_state: models.StorageUnitState = Field(..., title="Начальное состояние")
+    final_state: models.StorageUnitState = Field(..., title="Окончательное состояние")
+    created_at: dt.datetime = Field(..., title="Дата/Время совершения действия")
+
+    @classmethod
+    def from_model(cls, operation: models.StorageUnitOperation):
+        return cls(
+            id=operation.id,
+            storage_unit_id=operation.storage_unit_id,
+            employee=EmployeeSchema.from_model(operation.employee),
+            initial_state=operation.initial_state,
+            final_state=operation.final_state,
+            created_at=operation.created_at,
+        )

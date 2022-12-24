@@ -48,3 +48,39 @@ class ProductFactory(DjangoModelFactory):
     SKU = factory.Faker("isbn10")  # TODO: генерировать SKU
     barcode = factory.Faker("ean")
     category = factory.SubFactory(ProductCategoryFactory)
+
+
+class EmployeePositionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.EmployeePosition
+
+    name = factory.Faker("word")
+
+
+class EmployeeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Employee
+
+    first_name = factory.Faker("name")
+    last_name = factory.Faker("last_name")
+    middle_name = factory.Faker("middle_name")
+    position = factory.SubFactory(EmployeePositionFactory)
+
+
+class StorageUnitFactory(DjangoModelFactory):
+    class Meta:
+        model = models.StorageUnit
+
+    product = factory.SubFactory(ProductFactory)
+    warehouse = factory.SubFactory(WarehouseFactory)
+    state = models.StorageUnitState.NEW
+
+
+class StorageUnitOperationFactory(DjangoModelFactory):
+    class Meta:
+        model = models.StorageUnitOperation
+
+    storage_unit = factory.SubFactory(StorageUnitFactory)
+    employee = factory.SubFactory(EmployeeFactory)
+    initial_state = models.StorageUnitState.NEW
+    final_state = models.StorageUnitState.NEW

@@ -307,3 +307,206 @@ def get_products(
 
     paginator = pagination.TypedPaginator(schemas.ProductSchema, query)
     return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Добавить должность сотрудника",
+    errors=[
+        errors.EmployeePositionAlreadyExists,
+    ],
+)
+def add_employee_position(
+    _: auth.Session = Depends(dependencies.get_session),
+    name: str = Body(..., title="Название должности"),
+) -> schemas.EmployeePositionSchema:
+    try:
+        created_position = models.EmployeePosition.objects.create(name=name)
+    except django.db.IntegrityError as exc:
+        if "violates unique constraint" in str(exc):
+            raise errors.EmployeePositionAlreadyExists
+        raise
+
+    return schemas.EmployeePositionSchema.from_model(created_position)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Получить список должностей",
+)
+def get_employee_positions(
+    _: auth = Depends(dependencies.get_session),
+) -> list[schemas.EmployeePositionSchema]:
+    positions = list(models.EmployeePosition.objects.all())
+    return [
+        schemas.EmployeePositionSchema.from_model(position) for position in positions
+    ]
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Добавить сотрудника",
+    errors=[
+        errors.EmployeePositionNotFound,
+    ],
+)
+def add_employee(
+    _: auth.Session = Depends(dependencies.get_session),
+    employee_data: schemas.CreateEmployeeSchema = Body(
+        ..., title="Данные нового сотрудника"
+    ),
+) -> schemas.EmployeeSchema:
+    employee_data = employee_data.dict()
+
+    position_id = employee_data.pop("position_id")
+    position = models.EmployeePosition.objects.get_or_none(id=position_id)
+
+    if not position:
+        raise errors.EmployeePositionNotFound
+
+    employee = models.Employee.objects.create(
+        **employee_data,
+        position=position,
+    )
+
+    return schemas.EmployeeSchema.from_model(employee)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Получить сотрудника по ID",
+    errors=[
+        errors.EmployeeNotFound,
+    ],
+)
+def get_employee(
+    _: auth.Session = Depends(dependencies.get_session),
+    employee_id: uuid.UUID = Body(..., title="ID сотрудника"),
+) -> schemas.EmployeeSchema:
+    employee = models.Employee.objects.select_related("position").get_or_none(
+        id=employee_id
+    )
+
+    if not employee:
+        raise errors.EmployeeNotFound
+
+    return schemas.EmployeeSchema.from_model(employee)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Получить список сотрудников",
+)
+def get_employees(
+    _: auth.Session = Depends(dependencies.get_session),
+    any_pagination: pagination.AnyPagination = Depends(
+        dependencies.get_mutual_exclusive_pagination
+    ),
+    filters: schemas.EmployeeFilters = Body(
+        schemas.EmployeeFilters(), title="Фильтрация"
+    ),
+) -> pagination.PaginatedResponse[schemas.EmployeeSchema]:
+    query = models.Employee.objects.select_related("position").order_by(
+        "last_name", "first_name", "middle_name"
+    )
+    query = filters.filter_query(query)
+
+    paginator = pagination.TypedPaginator(schemas.EmployeeSchema, query)
+    return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=["web", "employees"],
+    summary="Изменить сотрудника",
+    errors=[
+        errors.EmployeeNotFound,
+        errors.EmployeePositionNotFound,
+    ],
+)
+def update_employee(
+    _: auth.Session = Depends(dependencies.get_session),
+    employee_id: uuid.UUID = Body(..., title="ID сотрудника"),
+    employee_data: schemas.UpdateEmployeeSchema = Body(
+        ..., title="Данные для изменения сотрудника"
+    ),
+) -> schemas.EmployeeSchema:
+    with transaction.atomic():
+        employee = models.Employee.objects.select_for_update(of=("self",)).get_or_none(
+            id=employee_id
+        )
+
+        if not employee:
+            raise errors.EmployeeNotFound
+
+        employee_data = employee_data.dict(exclude_none=True)
+        _update_fields = []
+
+        position_id = employee_data.pop("position_id", None)
+        if position_id:
+            position = models.EmployeePosition.objects.get_or_none(id=position_id)
+            if not position:
+                raise errors.EmployeePositionNotFound
+
+            employee.position = position
+            _update_fields.append("position")
+
+        for key, value in employee_data.items():
+            setattr(employee, key, value)
+            _update_fields.append(key)
+
+        employee.save()
+
+    return schemas.EmployeeSchema.from_model(employee)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Получить список единиц хранения продукта",
+    errors=[errors.ProductNotFound],
+)
+def get_storage_units(
+    _: auth.Session = Depends(dependencies.get_session),
+    any_pagination: pagination.AnyPagination = Depends(
+        dependencies.get_mutual_exclusive_pagination
+    ),
+    product_id: uuid.UUID = Body(..., title="ID товара"),
+    filters: schemas.StorageUnitFilters = Body(
+        schemas.StorageUnitFilters(), title="Фильтрация"
+    ),
+) -> pagination.PaginatedResponse[schemas.StorageUnitSchema]:
+    product = models.Product.objects.get_or_none(id=product_id)
+    if not product:
+        raise errors.ProductNotFound
+
+    query = (
+        models.StorageUnit.objects.select_related("product", "warehouse")
+        .order_by("warehouse", "-updated_at")
+        .filter(product_id=product_id)
+    )
+    query = filters.filter_query(query)
+
+    paginator = pagination.TypedPaginator(schemas.StorageUnitSchema, query)
+    return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=["web", "products"],
+    summary="Получить список действий с единицей хранения товара",
+    errors=[errors.StorageUnitNotFound],
+)
+def get_storage_unit_operations(
+    _: auth.Session = Depends(dependencies.get_session),
+    any_pagination: pagination.AnyPagination = Depends(
+        dependencies.get_mutual_exclusive_pagination
+    ),
+    storage_unit_id: uuid.UUID = Body(..., title="ID единицы хранения"),
+) -> pagination.PaginatedResponse[schemas.StorageUnitOperationSchema]:
+    storage_unit = models.StorageUnit.objects.get_or_none(id=storage_unit_id)
+    if not storage_unit:
+        raise errors.StorageUnitNotFound
+
+    query = models.StorageUnitOperation.objects.filter(
+        storage_unit=storage_unit,
+    ).order_by("-created_at")
+    paginator = pagination.TypedPaginator(schemas.StorageUnitOperationSchema, query)
+    return paginator.get_response(any_pagination)
