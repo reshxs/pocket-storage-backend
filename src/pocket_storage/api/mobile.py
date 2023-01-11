@@ -81,3 +81,21 @@ def get_storage_unit_with_qrcode(
         raise errors.StorageUnitNotFound
 
     return schemas.StorageUnitSchema.from_model(storage_unit)
+
+
+@api_v1.method(
+    tags=["mobile"],
+    summary="Получить список категорий товаров",
+)
+def get_product_categories(
+    parent_id: uuid.UUID
+    | None = Body(None, title="Фильтрация по ID родительской категории"),
+) -> list[schemas.ProductCategorySchema]:
+    query = models.ProductCategory.objects.select_related("parent")
+    if parent_id is not None:
+        query = query.filter(parent_id=parent_id)
+
+    categories = list(query.all())
+    return [
+        schemas.ProductCategorySchema.from_model(category) for category in categories
+    ]

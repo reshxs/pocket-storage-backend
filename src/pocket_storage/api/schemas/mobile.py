@@ -50,3 +50,17 @@ class StorageUnitFilters(BaseModel):
             )
 
         return query.filter(**filter_kwargs)
+
+
+class ProductCategorySchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID")
+    name: str = Field(..., title="Название категории")
+    parent_id: uuid.UUID | None = Field(..., title="ID родительской категории")
+
+    @classmethod
+    def from_model(cls, category: models.ProductCategory):
+        return cls(
+            id=category.id,
+            name=category.name,
+            parent_id=category.parent_id,
+        )
