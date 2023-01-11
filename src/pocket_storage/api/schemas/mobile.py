@@ -32,8 +32,10 @@ class StorageUnitSchema(BaseModel):
 
 class StorageUnitFilters(BaseModel):
     search_query: str | None = Field(None, title="Поисковый запрос")
-    product__category__ids: list[uuid.UUID] | None = Field(
-        None, title="ID категории товара"
+    product__category__id__in: list[uuid.UUID] | None = Field(
+        None,
+        title="ID категории товара",
+        alias="category_ids",
     )
 
     def filter_query(self, query: models.QuerySet):
