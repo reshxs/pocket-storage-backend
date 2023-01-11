@@ -77,3 +77,15 @@ def web_request(transactional_db, api_client, requests_mock, user_session_key):
         url="/api/v1/web/jsonrpc",
         session_key=user_session_key,
     )
+
+
+@pytest.fixture()
+def mobile_request(transactional_db, api_client, requests_mock):
+    requests_mock.register_uri(
+        "POST", "http://testserver/api/v1/mobile/jsonrpc", real_http=True
+    )
+
+    return functools.partial(
+        api_client.api_jsonrpc_request,
+        url="/api/v1/mobile/jsonrpc",
+    )

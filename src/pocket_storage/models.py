@@ -189,6 +189,12 @@ class StorageUnit(BaseModel):
         primary_key=True,
         default=uuid.uuid4,
     )
+    ext_id = models.CharField(
+        "Номер ячейки",
+        max_length=24,
+        null=True,
+        blank=True,
+    )
     product = models.ForeignKey(
         Product,
         verbose_name="Товар",
