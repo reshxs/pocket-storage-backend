@@ -63,7 +63,7 @@ def test_filter_by_category_id(mobile_request):
                 "count": True,
             },
             "filters": {
-                'category_ids': [str(expected_storage_unit.product.category.id)],
+                "category_ids": [str(expected_storage_unit.product.category.id)],
             },
         },
     )
@@ -87,20 +87,20 @@ def test_filter_by_category_id(mobile_request):
 
 
 @pytest.mark.parametrize(
-    'search_query',
+    "search_query",
     [
-        'Ламинат',
-        'SNI/01/136/0500',
-        '4600702084566',
-        'F123',
-    ]
+        "Ламинат",
+        "SNI/01/136/0500",
+        "4600702084566",
+        "F123",
+    ],
 )
 def test_search(mobile_request, search_query):
     expected_storage_unit: models.StorageUnit = factories.StorageUnitFactory.create(
-        ext_id='F123',
-        product__name='Ламинат',
-        product__SKU='SNI/01/136/0500',
-        product__barcode='4600702084566',
+        ext_id="F123",
+        product__name="Ламинат",
+        product__SKU="SNI/01/136/0500",
+        product__barcode="4600702084566",
     )
     factories.StorageUnitFactory.create()  # unexpected_storage_unit
 
@@ -111,7 +111,7 @@ def test_search(mobile_request, search_query):
                 "count": True,
             },
             "filters": {
-                'search_query': search_query,
+                "search_query": search_query,
             },
         },
     )
