@@ -1,11 +1,13 @@
 import uuid
 
+import jwt
 from fastapi import Depends, Body
 from fastapi_jsonrpc import Entrypoint
 
 from . import pagination, dependencies, errors
 from .schemas import mobile as schemas
 from .. import models
+from ..storage_unit_qrcode import parse_qrcode_content
 
 api_v1 = Entrypoint(
     "/api/v1/mobile/jsonrpc",
@@ -49,6 +51,31 @@ def get_storage_unit_with_id(
     storage_unit = models.StorageUnit.objects.select_related(
         "product", "product__category"
     ).get_or_none(id=storage_unit_id)
+
+    if not storage_unit:
+        raise errors.StorageUnitNotFound
+
+    return schemas.StorageUnitSchema.from_model(storage_unit)
+
+
+@api_v1.method(
+    tags=["mobile"],
+    summary="Получить единицу хранения по содержимому QR-кода",
+    errors=[
+        errors.StorageUnitNotFound,
+    ],
+)
+def get_storage_unit_with_qrcode(
+    qrcode_content: str = Body(..., title="Содержимое QR-кода"),
+) -> schemas.StorageUnitSchema:
+    try:
+        qrcode_payload = parse_qrcode_content(qrcode_content)
+    except jwt.exceptions.InvalidTokenError:
+        raise errors.StorageUnitNotFound
+
+    storage_unit = models.StorageUnit.objects.select_related(
+        "product", "product__category"
+    ).get_or_none(id=qrcode_payload.storage_unit_id)
 
     if not storage_unit:
         raise errors.StorageUnitNotFound
