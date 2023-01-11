@@ -14,6 +14,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from .api.web import api_v1 as web_api_v1
+from .api.mobile import api_v1 as mobile_api_v1
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,7 @@ app.mount(
 )
 
 app.bind_entrypoint(web_api_v1)
+app.bind_entrypoint(mobile_api_v1)
 
 
 @app.get("/", include_in_schema=False)
