@@ -28,3 +28,7 @@ $ python3 src/run.py web --collectstatic --migrate
 ```bash
 $ python3 src/manage.py createsuperuser
 ```
+## Генерация тестовых данных
+```bash
+python3 src/manage.py generate_test_data 
+```
