@@ -36,6 +36,9 @@ class Warehouse(BaseModel):
         unique=True,
     )
 
+    def __str__(self):
+        return self.name
+
 
 class ProductCategory(BaseModel):
     """Категория товара."""
@@ -124,6 +127,9 @@ class Product(BaseModel):
         help_text="Дата/Время добавления записи",
     )
 
+    def __str__(self):
+        return self.name
+
 
 class EmployeePosition(BaseModel):
     """Должность сотрудника."""
@@ -192,8 +198,6 @@ class StorageUnit(BaseModel):
     ext_id = models.CharField(
         "Номер ячейки",
         max_length=24,
-        null=True,
-        blank=True,
     )
     product = models.ForeignKey(
         Product,

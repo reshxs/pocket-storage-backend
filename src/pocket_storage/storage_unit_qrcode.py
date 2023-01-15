@@ -1,5 +1,5 @@
-import uuid
-
+import qrcode
+from io import BytesIO
 import jwt
 from django.conf import settings
 from pydantic import BaseModel
@@ -15,6 +15,14 @@ class QrCodeContentPayload(BaseModel):
         return cls(
             storage_unit_id=str(storage_unit.id),
         )
+
+
+def make_qrcode(storage_unit: models.StorageUnit) -> bytes:
+    content = make_qrcode_content(storage_unit)
+    buffer = BytesIO()
+    qr = qrcode.make(content)
+    qr.save(buffer)
+    return buffer.getvalue()
 
 
 def make_qrcode_content(storage_unit: models.StorageUnit) -> str:

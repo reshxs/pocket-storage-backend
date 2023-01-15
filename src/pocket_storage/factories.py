@@ -73,6 +73,7 @@ class StorageUnitFactory(DjangoModelFactory):
 
     product = factory.SubFactory(ProductFactory)
     warehouse = factory.SubFactory(WarehouseFactory)
+    ext_id = factory.Faker('word')
     state = models.StorageUnitState.NEW
 
 
