@@ -7,7 +7,9 @@ class Command(BaseCommand):
         warehouse = factories.WarehouseFactory.create()
 
         root_category = factories.ProductCategoryFactory.create()
-        leaf_categories = factories.ProductCategoryFactory.create_batch(3, parent_id=root_category.id)
+        leaf_categories = factories.ProductCategoryFactory.create_batch(
+            3, parent_id=root_category.id
+        )
 
         products = []
         for category in leaf_categories:
@@ -15,5 +17,6 @@ class Command(BaseCommand):
             products.append(product)
 
         for product in products:
-            factories.StorageUnitFactory.create_batch(5, product=product, warehouse=warehouse)
-
+            factories.StorageUnitFactory.create_batch(
+                5, product=product, warehouse=warehouse
+            )
