@@ -65,18 +65,14 @@ class ProductCategoryLinkMixin(object):
 class ProductLinkMixin(object):
     @admin_attrs(short_description="Товар")
     def product_link(self, obj):
-        link = reverse(
-            "admin:pocket_storage_product_change", args=[obj.product_id]
-        )
+        link = reverse("admin:pocket_storage_product_change", args=[obj.product_id])
         return format_html(f'<a href="{link}">{obj.product.name}</a>')
 
 
 class WarehouseLinkMixin(object):
     @admin_attrs(short_description="Склад")
     def warehouse_link(self, obj):
-        link = reverse(
-            "admin:pocket_storage_warehouse_change", args=[obj.warehouse_id]
-        )
+        link = reverse("admin:pocket_storage_warehouse_change", args=[obj.warehouse_id])
         return format_html(f'<a href="{link}">{obj.warehouse.name}</a>')
 
 
@@ -133,13 +129,11 @@ class ProductModelAdmin(ProductCategoryLinkMixin, admin.ModelAdmin):
         "SKU",
         "barcode",
     )
-    list_filter = (
-        ProductCategoryFilter,
-    )
+    list_filter = (ProductCategoryFilter,)
 
 
 def image_from_bytes(image_content: tp.Union[bytes, memoryview]) -> str:
-    b64_content = b64encode(image_content).decode('utf8')
+    b64_content = b64encode(image_content).decode("utf8")
     return mark_safe(f'<img src = "data: image/png; base64, {b64_content}">')  # noqa
 
 
@@ -164,14 +158,14 @@ class StorageUnitModelAdmin(
         "product__barcode",
     )
 
-    readonly_fields = ('qrcode_img',)
+    readonly_fields = ("qrcode_img",)
 
     list_filter = (
         ProductFilter,
         WarehouseFilter,
     )
 
-    @admin.display(description='QR-код')
+    @admin.display(description="QR-код")
     def qrcode_img(self, obj: models.StorageUnit) -> tp.Optional[str]:
         content = storage_unit_qrcode.make_qrcode(obj)
 

@@ -1,6 +1,7 @@
 import uuid
 
 import jwt
+from django.db import transaction
 from fastapi import Depends, Body
 from fastapi_jsonrpc import Entrypoint
 
@@ -99,3 +100,27 @@ def get_product_categories(
     return [
         schemas.ProductCategorySchema.from_model(category) for category in categories
     ]
+
+
+@api_v1.method(
+    tags=["mobile"],
+    summary="Изменить номер ячейки для единицы хранения",
+    errors=[
+        errors.StorageUnitNotFound,
+    ]
+)
+def update_storage_unit_ext_id(
+    storage_unit_id: uuid.UUID = Body(..., title="ID единицы хранения"),
+    ext_id: str = Body(..., title="Новый номер ячейки"),
+) -> schemas.StorageUnitSchema:
+    with transaction.atomic():
+        storage_unit = models.StorageUnit.objects.select_for_update(
+            of=("self",), no_key=True
+        ).get_or_none(id=storage_unit_id)
+        if not storage_unit:
+            raise errors.StorageUnitNotFound
+
+        storage_unit.ext_id = ext_id
+        storage_unit.save()
+
+    return schemas.StorageUnitSchema.from_model(storage_unit)
