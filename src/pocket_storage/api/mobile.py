@@ -4,6 +4,7 @@ import jwt
 from django.db import transaction
 from fastapi import Depends, Body
 from fastapi_jsonrpc import Entrypoint
+from django.db.models import Q
 
 from . import pagination, dependencies, errors
 from .schemas import mobile as schemas
@@ -107,7 +108,7 @@ def get_product_categories(
     summary="Изменить номер ячейки для единицы хранения",
     errors=[
         errors.StorageUnitNotFound,
-    ]
+    ],
 )
 def update_storage_unit_ext_id(
     storage_unit_id: uuid.UUID = Body(..., title="ID единицы хранения"),
@@ -127,19 +128,53 @@ def update_storage_unit_ext_id(
 
 
 @api_v1.method(
-    tags=['mobile'],
-    summary='Удалить единицу хранения',
+    tags=["mobile"],
+    summary="Удалить единицу хранения",
     errors=[
         errors.StorageUnitNotFound,
     ],
 )
-def delete_storage_unit(storage_unit_id: uuid.UUID = Body(..., title="ID единицы хранения")) -> bool:
+def delete_storage_unit(
+    storage_unit_id: uuid.UUID = Body(..., title="ID единицы хранения")
+) -> bool:
     """Всегда возвращает либо True, либо одну из возможных ошибок."""
     with transaction.atomic():
-        storage_unit = models.StorageUnit.objects.select_for_update(of=('self',), no_key=True).get_or_none(id=storage_unit_id)
+        storage_unit = models.StorageUnit.objects.select_for_update(
+            of=("self",), no_key=True
+        ).get_or_none(id=storage_unit_id)
         if not storage_unit:
             raise errors.StorageUnitNotFound
 
         storage_unit.delete()
 
     return True
+
+
+@api_v1.method(
+    tags=["mobile"],
+    summary="Получить список товаров",
+)
+def get_products(
+    any_pagination: pagination.AnyPagination = Depends(
+        dependencies.get_mutual_exclusive_pagination
+    ),
+    search_str: str
+    | None = Body(
+        None,
+        title="Поисковый запрос",
+        description="Поиск по названию, SKU и штрих-коду товара",
+        alias="search",
+    ),
+) -> pagination.PaginatedResponse[schemas.ProductSchema]:
+    query = models.Product.objects.order_by("name")
+    if search_str:
+        query = query.filter(
+            Q(
+                Q(name__icontains=search_str)
+                | Q(SKU__icontains=search_str)
+                | Q(barcode__icontains=search_str)
+            ),
+        )
+
+    paginator = pagination.TypedPaginator(schemas.ProductSchema, query)
+    return paginator.get_response(any_pagination)

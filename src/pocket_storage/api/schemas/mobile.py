@@ -64,3 +64,21 @@ class ProductCategorySchema(BaseModel):
             name=category.name,
             parent_id=category.parent_id,
         )
+
+
+class ProductSchema(BaseModel):
+    id: uuid.UUID = Field(..., title="ID")
+    name: str = Field(..., title="Название товара")
+    SKU: str = Field(..., title="SKU товара")
+    barcode: str | None = Field(None, title="Штрих-код товара (если есть)")
+    category: ProductCategorySchema | None = Field(None, title="Категория товара")
+
+    @classmethod
+    def from_model(cls, product: models.Product):
+        return cls(
+            id=product.id,
+            name=product.name,
+            SKU=product.SKU,
+            barcode=product.barcode,
+            category=ProductCategorySchema.from_model(product.category),
+        )

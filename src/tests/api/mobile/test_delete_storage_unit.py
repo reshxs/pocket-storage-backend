@@ -13,22 +13,22 @@ def test_ok(mobile_request):
     storage_unit = factories.StorageUnitFactory.create()
 
     resp = mobile_request(
-        'delete_storage_unit',
+        "delete_storage_unit",
         {
-            'storage_unit_id': str(storage_unit.id),
+            "storage_unit_id": str(storage_unit.id),
         },
     )
 
-    assert resp.get('result') is True
+    assert resp.get("result") is True
 
     assert not models.StorageUnit.objects.filter(id=storage_unit.id).exists()
 
 
 def test_not_found(mobile_request):
     resp = mobile_request(
-        'delete_storage_unit',
+        "delete_storage_unit",
         {
-            'storage_unit_id': str(uuid.uuid4()),
+            "storage_unit_id": str(uuid.uuid4()),
         },
     )
 
