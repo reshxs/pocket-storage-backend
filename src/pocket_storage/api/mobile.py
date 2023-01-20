@@ -124,3 +124,22 @@ def update_storage_unit_ext_id(
         storage_unit.save()
 
     return schemas.StorageUnitSchema.from_model(storage_unit)
+
+
+@api_v1.method(
+    tags=['mobile'],
+    summary='Удалить единицу хранения',
+    errors=[
+        errors.StorageUnitNotFound,
+    ],
+)
+def delete_storage_unit(storage_unit_id: uuid.UUID = Body(..., title="ID единицы хранения")) -> bool:
+    """Всегда возвращает либо True, либо одну из возможных ошибок."""
+    with transaction.atomic():
+        storage_unit = models.StorageUnit.objects.select_for_update(of=('self',), no_key=True).get_or_none(id=storage_unit_id)
+        if not storage_unit:
+            raise errors.StorageUnitNotFound
+
+        storage_unit.delete()
+
+    return True
