@@ -1,5 +1,6 @@
 import uuid
 
+import django.db
 import jwt
 from django.db import transaction
 from fastapi import Depends, Body
@@ -178,3 +179,55 @@ def get_products(
 
     paginator = pagination.TypedPaginator(schemas.ProductSchema, query)
     return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=["mobile"],
+    summary="Создать единицу хранения с id товара",
+    errors=[errors.ProductNotFound, errors.StorageUnitAlreadyExists],
+)
+def create_storage_unit_with_product_id(
+    product_id: uuid.UUID = Body(..., title="ID товара"),
+    ext_id: str = Body(..., title="Номер ячейки"),
+) -> schemas.StorageUnitSchema:
+    product = models.Product.objects.get_or_none(id=product_id)
+    if not product:
+        raise errors.ProductNotFound
+
+    # TODO: с этим надо аккуратно
+    warehouse = models.Warehouse.objects.first()
+
+    try:
+        storage_unit = models.StorageUnit.objects.create(
+            product=product, warehouse=warehouse, ext_id=ext_id
+        )
+    except django.db.IntegrityError:
+        raise errors.StorageUnitAlreadyExists
+
+    return schemas.StorageUnitSchema.from_model(storage_unit)
+
+
+@api_v1.method(
+    tags=["mobile"],
+    summary="Создать единицу хранения по штрих-коду товара",
+    errors=[errors.ProductNotFound, errors.StorageUnitAlreadyExists],
+)
+def create_storage_unit_with_product_barcode(
+    barcode: str = Body(..., title="Штрих-код товара"),
+    ext_id: str = Body(..., title="Номер ячейки"),
+) -> schemas.StorageUnitSchema:
+    product = models.Product.objects.get_or_none(barcode=barcode)
+    if not product:
+        raise errors.ProductNotFound
+
+    # TODO: с этим надо аккуратно
+    warehouse = models.Warehouse.objects.first()
+
+    try:
+        storage_unit = models.StorageUnit.objects.create(
+            product=product, warehouse=warehouse, ext_id=ext_id
+        )
+    except django.db.IntegrityError:
+        raise errors.StorageUnitAlreadyExists
+
+    return schemas.StorageUnitSchema.from_model(storage_unit)
