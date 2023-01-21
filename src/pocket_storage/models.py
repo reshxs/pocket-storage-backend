@@ -198,6 +198,7 @@ class StorageUnit(BaseModel):
     ext_id = models.CharField(
         "Номер ячейки",
         max_length=24,
+        unique=True,
     )
     product = models.ForeignKey(
         Product,

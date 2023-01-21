@@ -51,6 +51,11 @@ class EmployeeNotFound(BaseError):
     MESSAGE = "Employee not found"
 
 
+class StorageUnitAlreadyExists(BaseError):
+    CODE = 7001
+    MESSAGE = "Storage unit already exists"
+
+
 class StorageUnitNotFound(BaseError):
     CODE = 7002
     MESSAGE = "Storage unit not found"
