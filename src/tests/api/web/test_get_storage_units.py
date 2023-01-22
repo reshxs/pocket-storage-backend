@@ -32,7 +32,7 @@ def test_ok(web_request):
                     "id": str(storage_unit.warehouse.id),
                     "name": storage_unit.warehouse.name,
                 },
-                "state": storage_unit.state.value,
+                "ext_id": storage_unit.ext_id,
                 "created_at": storage_unit.created_at.isoformat(),
                 "updated_at": storage_unit.updated_at.isoformat()
                 if storage_unit.updated_at
@@ -73,7 +73,7 @@ def test_filter_filter_by_warehouse(web_request):
                     "id": str(expected_storage_unit.warehouse.id),
                     "name": expected_storage_unit.warehouse.name,
                 },
-                "state": expected_storage_unit.state.value,
+                "ext_id": expected_storage_unit.ext_id,
                 "created_at": expected_storage_unit.created_at.isoformat(),
                 "updated_at": expected_storage_unit.updated_at.isoformat()
                 if expected_storage_unit.updated_at

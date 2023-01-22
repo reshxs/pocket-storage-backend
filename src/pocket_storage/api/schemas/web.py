@@ -218,7 +218,7 @@ class StorageUnitSchema(BaseModel):
     id: uuid.UUID = Field(..., title="ID единицы хранения")
     product: ShortProductSchema = Field(..., title="Товар")
     warehouse: WarehouseSchema = Field(..., title="Склад")
-    state: models.StorageUnitState = Field(..., title="Состояние")
+    ext_id: str = Field(..., title="Номер ячейки")
     created_at: dt.datetime = Field(
         ..., title="Создано", description="Дата/Время создания записи"
     )
@@ -232,7 +232,7 @@ class StorageUnitSchema(BaseModel):
             id=storage_unit.id,
             product=ShortProductSchema.from_model(storage_unit.product),
             warehouse=WarehouseSchema.from_model(storage_unit.warehouse),
-            state=storage_unit.state,
+            ext_id=storage_unit.ext_id,
             created_at=storage_unit.created_at,
             updated_at=storage_unit.updated_at,
         )
