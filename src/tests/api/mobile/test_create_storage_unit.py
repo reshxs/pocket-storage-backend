@@ -109,7 +109,7 @@ def test_create_with_barcode__product_not_found__return_error(mobile_request):
     resp = mobile_request(
         "create_storage_unit_with_product_barcode",
         {
-            "barcode": 'barcode',
+            "barcode": "barcode",
             "ext_id": "Z123",
         },
     )
