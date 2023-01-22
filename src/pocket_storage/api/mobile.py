@@ -183,6 +183,26 @@ def get_products(
 
 @api_v1.method(
     tags=["mobile"],
+    summary="Поулчить товар по штрих-коду",
+    errors=[
+        errors.ProductNotFound,
+    ],
+)
+def get_product_with_barcode(
+    barcode: str = Body(..., title="Штрих-код товара"),
+) -> schemas.ProductSchema:
+    product = models.Product.objects.select_related("category").get_or_none(
+        barcode=barcode
+    )
+
+    if not product:
+        raise errors.ProductNotFound
+
+    return schemas.ProductSchema.from_model(product)
+
+
+@api_v1.method(
+    tags=["mobile"],
     summary="Создать единицу хранения с id товара",
     errors=[errors.ProductNotFound, errors.StorageUnitAlreadyExists],
 )
