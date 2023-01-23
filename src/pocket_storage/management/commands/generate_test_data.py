@@ -4,19 +4,47 @@ from pocket_storage import factories
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        warehouse = factories.WarehouseFactory.create()
+        warehouse = factories.WarehouseFactory.create(name='Склад: Коммунаров 47')
 
-        root_category = factories.ProductCategoryFactory.create()
-        leaf_categories = factories.ProductCategoryFactory.create_batch(
-            3, parent_id=root_category.id
+        root_category = factories.ProductCategoryFactory.create(name='Чистовой ремонт')
+
+        factories.ProductCategoryFactory.create(
+            name='Штукатурка',
+            parent_id=root_category.id,
+        )
+        factories.ProductCategoryFactory.create(
+            name='Обои',
+            parent_id=root_category.id,
         )
 
-        products = []
-        for category in leaf_categories:
-            product = factories.ProductFactory.create(category=category)
-            products.append(product)
+        category = factories.ProductCategoryFactory.create(
+            name='Краска',
+            parent_id=root_category.id
+        )
 
-        for product in products:
-            factories.StorageUnitFactory.create_batch(
-                5, product=product, warehouse=warehouse
-            )
+        products = [
+            factories.ProductFactory.create(
+                name='Краска акриловая красная',
+                SKU='SNI/01/136/0500',
+                barcode='4600702084566',
+                category=category,
+            ),
+            factories.ProductFactory.create(
+                name='Краска акриловая синяя',
+                SKU='SNI/01/136/0512',
+                barcode='4600702084321',
+                category=category,
+            ),
+            factories.ProductFactory.create(
+                name='Краска акриловая розовая',
+                SKU='SNI/01/136/0547',
+                barcode='4600702081234',
+                category=category,
+            ),
+        ]
+
+        for index, product in enumerate(products, 1):
+            for i in range(1+index, 5+index):
+                factories.StorageUnitFactory.create(
+                    product=product, warehouse=warehouse, ext_id='F' + f'{index*i}'*index
+                )
